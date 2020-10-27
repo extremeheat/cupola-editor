@@ -1,0 +1,232 @@
+/* Palette: TODO: Seperate CSS */
+
+.cmd-palette {
+    margin-top: 40px;
+}
+
+/* TOP BAR */
+
+.topbar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 50px;
+    width: 100%;
+    background-color: var(--ui-bg-col);
+    color: white;
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+    align-items: center;
+    z-index: 8;
+}
+
+.top-i {
+    text-align: center;
+    /* padding: 10px; */
+    display: flex;
+    flex-direction: column;
+    /* justify-content: space-around; */
+    align-items: center;
+    color: darkgray;
+    font-size: smaller;
+    --ggs: 1.2;
+    padding-right: 20px;
+}
+
+.topbar-right {
+    position: absolute;
+    right: 10px;
+    font-size: small;
+    display: flex;
+    flex-direction: row;
+}
+
+.topbar-left {
+    position: absolute;
+    left: 80px;
+    font-size: small;
+}
+
+@media screen and (max-width: 768px) {
+    .sidebar-expanded {
+        width: calc(100% - 74px) !important;
+    }
+    .topbar {
+        font-size: small;
+        justify-content: space-evenly;
+    }
+    .topbar-left {
+        position: relative;
+        left: 0;
+    }
+    .topbar-right {
+        position: relative;
+        right: 0;
+    }
+    /* Don't show extra nice-to-haves */
+    .extras {
+        display: none;
+    }
+    .cmd-palette.cmd-palette--show {
+        width: 100%;
+        left: 0;
+        right: 0;
+    }
+}
+
+/* SIDEBAR */
+
+.sidebar-icons {
+    position: fixed;
+    left: 0;
+    top: 50px;
+    height: 100%;
+    background-color: var(--ui-bg-col);
+    width: 74px;
+    display: flex;
+    flex-direction: column;
+    /* justify-content: center; */
+    align-items: center;
+    color: white;
+    /* padding-top: 50px; */
+}
+
+.sidebar-i {
+    /* font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; */
+    width: 100%;
+    /* height: 10px; */
+    padding-top: 24px;
+    padding-bottom: 40px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    position: relative;
+    color: gray;
+    cursor: pointer !important;
+}
+
+.sidebar-i span {
+    font-size: small;
+    position: absolute;
+    bottom: 6px;
+}
+
+.sidebar-i i {
+    --ggs: 1.6;
+    /* color: gray; */
+}
+
+/* .sidebar-i i:hover {
+    color: white;
+  } */
+
+.sidebar-i:hover {
+    border-left-color: skyblue;
+    /* background-color: black; */
+    transition: background-color 0.2s;
+    transition: color 0.2s;
+    color: white;
+}
+
+.sidebar-icons .active {
+    background-color: #26c28180 !important;
+    transition: background-color 0.25s;
+    color: white !important;
+}
+
+/* SIDEBAR EXPANDED */
+
+.sidebar-expanded {
+    position: fixed;
+    left: 74px;
+    top: 50px;
+    width: 20%;
+    height: calc(100% - 50px);
+    background-color: var(--ui-bg-col);
+    resize: both;
+    overflow: auto;
+    color: white;
+}
+
+.sidebar-expanded .my-input {
+    /* width: 100%; */
+    padding-top: 10px;
+    border-radius: 10px;
+    padding-bottom: 10px;
+    background-color: var(--ui-bg-col);
+    border: 0;
+    color: white;
+    text-align: center;
+}
+
+@media screen and (min-width: 1000px) {
+    .sidebar-expanded {
+        width: 16%;
+    }
+}
+
+.collapsible {
+    background-color: transparent;
+}
+
+/* 
+   */
+
+.wrapper {
+    /* margin: 10% auto; */
+    width: 100%;
+}
+
+.sidebar-expanded ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.sidebar-expanded .c-label {
+    display: block;
+    cursor: pointer;
+    padding: 10px;
+    /* border: 1px solid #fff; */
+    border-bottom: none;
+    color: gray;
+}
+
+.sidebar-expanded .c-label:hover {
+    background: #26c28180;
+    color: white;
+}
+
+.sidebar-expanded .c-label.last {
+    /* border-bottom: 1px solid #fff; */
+}
+
+.sidebar-expanded ul ul li {
+    padding: 10px;
+    color: white;
+    /* background: #59abe3; */
+}
+
+.sidebar-expanded .collapsible[type="checkbox"] {
+    position: absolute;
+    left: -9999px;
+}
+
+.sidebar-expanded .collapsible[type="checkbox"]~ul {
+    height: 0;
+    transform: scaleY(0);
+}
+
+.sidebar-expanded .collapsible[type="checkbox"]:checked~ul {
+    height: 100%;
+    transform-origin: top;
+    transition: transform 0.2s ease-out;
+    transform: scaleY(1);
+}
+
+.sidebar-expanded .collapsible[type="checkbox"]:checked+label {
+    background: #26c28180;
+    /* border-bottom: 1px solid #fff; */
+    color: white;
+}

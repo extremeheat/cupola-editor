@@ -1,32 +1,55 @@
 {
-  "name": "prismarine-template",
+  "name": "mceditor.js",
   "version": "1.0.0",
-  "description": "A template repository to make it easy to create new prismarine repo",
-  "main": "index.js",
+  "description": "A world editor for Minecraft",
+  "main": "src/main/index.js",
   "scripts": {
     "test": "jest --verbose",
     "pretest": "npm run lint && require-self",
     "prepare": "npm install require-self && require-self",
     "lint": "standard",
-    "fix": "standard --fix"
+    "fix": "standard --fix",
+    "build": "tsc && tsc -p src/tsconfig.json",
+    "watch": "tsc -w",
+    "start": "npm run build && electron .",
+    "pack": "electron-builder --dir",
+    "dist": "npm build && electron-builder",
+    "postinstall": "electron-builder install-app-deps"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/PrismarineJS/prismarine-template.git"
+    "url": "git+https://github.com/extremeheat/mceditor.js.git"
   },
   "keywords": [
     "prismarine",
     "template"
   ],
-  "author": "Romain Beaumont",
+  "author": "extremeheat",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/PrismarineJS/prismarine-template/issues"
+    "url": "https://github.com/extremeheat/mceditor.js/issues"
   },
-  "homepage": "https://github.com/PrismarineJS/prismarine-template#readme",
+  "homepage": "https://github.com/extremeheat/mceditor.js#readme",
   "devDependencies": {
+    "typescript": "^3.4.3",
+    "electron": "^10.1.5",
+    "electron-builder": "^22.9.1",
     "jest": "^26.1.0",
     "require-self": "^0.2.3",
     "standard": "^14.3.4"
+  },
+  "dependencies": {
+    "@types/three": "^0.103.2",
+    "canvas": "^2.6.1",
+    "electron-progressbar": "^1.2.0",
+    "preact": "^10.5.5",
+    "prismarine-viewer": "^1.6.0",
+    "three": "^0.121.1"
+  },
+  "build": {
+    "appId": "mceditor.js",
+    "mac": {
+      "category": "mceditor.js"
+    }
   }
 }

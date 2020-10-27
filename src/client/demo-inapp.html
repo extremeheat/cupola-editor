@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Hello World!</title>
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'" /> -->
+    <!-- <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'" /> -->
+
+    <link rel="stylesheet" href="../assets/animate.css" />
+    <link rel="stylesheet" href="style.css" />
+    <link
+      href="https://css.gg/css?=|assign|undo|redo|user-list|globe-alt|time|import|brush|add-r"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.jsdelivr.net/gh/tpoisseau/palette-command.js@master/dist/palette-command.min.css"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Compiled and minified CSS -->
+    <!-- <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
+    /> -->
+  </head>
+
+  <body>
+    <div class="debug-info">
+      Node.js <span id="node-version"></span>, Chromium
+      <span id="chrome-version"></span>, Electron
+      <span id="electron-version"></span>.
+    </div>
+
+    <style>
+      .cmd-palette {
+        margin-top: 40px;
+      }
+
+      .topbar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 50px;
+        width: 100%;
+        background-color: var(--ui-bg-col);
+        color: white;
+
+        display: flex;
+        justify-content: center;
+        flex-direction: row;
+        align-items: center;
+        z-index: 8;
+      }
+
+      .top-i {
+        text-align: center;
+        /* padding: 10px; */
+        display: flex;
+        flex-direction: column;
+        /* justify-content: space-around; */
+        align-items: center;
+        color: darkgray;
+        font-size: smaller;
+        --ggs: 1.2;
+        padding-right: 20px;
+      }
+
+      .topbar-right {
+        position: absolute;
+        right: 10px;
+        font-size: small;
+        display: flex;
+        flex-direction: row;
+      }
+
+      .topbar-left {
+        position: absolute;
+        left: 80px;
+        font-size: small;
+      }
+
+      @media screen and (max-width: 768px) {
+        .sidebar-expanded {
+          width: calc(100% - 74px) !important;
+        }
+        .topbar {
+          font-size: small;
+          justify-content: space-evenly;
+        }
+        .topbar-left {
+          position: relative;
+          left: 0;
+        }
+        .topbar-right {
+          position: relative;
+          right: 0;
+        }
+        /* Don't show extra nice-to-haves */
+        .extras {
+          display: none;
+        }
+
+        .cmd-palette.cmd-palette--show {
+          width: 100%;
+          left: 0;
+          right: 0;
+        }
+      }
+    </style>
+    <div class="topbar">
+      <div class="topbar-left">
+        <span>Overworld</span> &nbsp;
+        <span class="extras">View Distance: 8</span>
+      </div>
+      <div class="topbar-right">
+        <div class="top-i">
+          <i class="gg-undo"></i>
+          <span style="padding-top: 8px">Undo</span>
+        </div>
+        <div class="top-i">
+          <i class="gg-redo"></i>
+          <span style="padding-top: 8px">Redo</span>
+        </div>
+      </div>
+
+      <div class="">
+        <span class="extras">My World &bull;</span>
+        <span style="color: lightblue; font-style: italic" onclick="confirm('Save 23 pending changes? This cannot be undone!')">23 Unsaved</span>
+      </div>
+    </div>
+
+    <style>
+      .sidebar-icons {
+        position: fixed;
+        left: 0;
+        top: 50px;
+        height: 100%;
+        background-color: var(--ui-bg-col);
+        width: 74px;
+        display: flex;
+        flex-direction: column;
+        /* justify-content: center; */
+        align-items: center;
+        color: white;
+        /* padding-top: 50px; */
+      }
+
+      .sidebar-i {
+        /* font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; */
+        width: 100%;
+        /* height: 10px; */
+        padding-top: 24px;
+        padding-bottom: 40px;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        position: relative;
+        color: gray;
+        cursor: pointer !important;
+      }
+
+      .sidebar-i span {
+        font-size: small;
+        position: absolute;
+        bottom: 6px;
+      }
+
+      .sidebar-i i {
+        --ggs: 1.6;
+        /* color: gray; */
+      }
+
+      /* .sidebar-i i:hover {
+        color: white;
+      } */
+
+      .sidebar-i:hover {
+        border-left-color: skyblue;
+        /* background-color: black; */
+        transition: background-color 0.2s;
+        transition: color 0.2s;
+        color: white;
+      }
+      .active {
+        background-color: #bfbfbf7d !important;
+        color: white !important;
+      }
+    </style>
+
+    <div class="sidebar-icons">
+      <div
+        class="sidebar-i waves-effect waves-light"
+        id="xx"
+        onclick="setTimeout(() => document.querySelector('#xx').classList.add('active'), 200)"
+      >
+        <i class="gg-assign"></i>
+        <span>Selection</span>
+      </div>
+      <div class="sidebar-i">
+        <i class="gg-globe-alt"></i>
+        <span>World</span>
+      </div>
+
+      <div class="sidebar-i">
+        <i class="gg-user-list"></i>
+        <span>Players</span>
+      </div>
+
+      <div class="sidebar-i">
+        <i class="gg-import"></i>
+        <span>Import</span>
+      </div>
+
+      <div class="sidebar-i">
+        <i class="gg-time"></i>
+        <span>History</span>
+      </div>
+
+      <div class="sidebar-i">
+        <i class="gg-brush"></i>
+        <span>Filter</span>
+      </div>
+
+      <div class="sidebar-i">
+        <i class="gg-add-r"></i>
+        <span>Plugins</span>
+      </div>
+    </div>
+
+    <style>
+      .sidebar-expanded {
+        position: fixed;
+        left: 74px;
+        top: 50px;
+        width: 20%;
+        height: calc(100% - 50px);
+        background-color: var(--ui-bg-col);
+        resize: both;
+        overflow: auto;
+      }
+
+      @media screen and (min-width: 1000px) {
+        .sidebar-expanded {
+          width: 16%;
+        }
+      }
+
+      .collapsible {
+        background-color: transparent;
+      }
+
+      /* 
+       */
+
+      .wrapper {
+        /* margin: 10% auto; */
+        width: 100%;
+      }
+
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .c-label {
+        display: block;
+        cursor: pointer;
+        padding: 10px;
+        /* border: 1px solid #fff; */
+        border-bottom: none;
+        color: gray;
+      }
+
+      .c-label:hover {
+        background: #26c28180;
+        color: white;
+      }
+
+      .c-label.last {
+        /* border-bottom: 1px solid #fff; */
+      }
+
+      ul ul li {
+        padding: 10px;
+        color: white;
+        /* background: #59abe3; */
+      }
+
+      .collapsible[type="checkbox"] {
+        position: absolute;
+        left: -9999px;
+      }
+
+      .collapsible[type="checkbox"] ~ ul {
+        height: 0;
+        transform: scaleY(0);
+      }
+
+      .collapsible[type="checkbox"]:checked ~ ul {
+        height: 100%;
+        transform-origin: top;
+        transition: transform 0.2s ease-out;
+        transform: scaleY(1);
+      }
+
+      .collapsible[type="checkbox"]:checked + label {
+        background: #26c28180;
+        /* border-bottom: 1px solid #fff; */
+        color: white;
+      }
+
+      .my-input {
+        /* width: 100%; */
+        padding-top: 10px;
+        border-radius: 10px;
+        padding-bottom: 10px;
+        background-color: var(--ui-bg-col);
+        border: 0;
+        color: white;
+        text-align: center;
+      }
+      .pushed {
+        padding-left: 2%;
+        color: white;
+      }
+      /* @media screen and (min-width: 768px) {
+          .rowable {
+            display:flex;flex-direction: row;
+          }
+      } */
+    </style>
+    <div class="sidebar-expanded">
+      <div class="wrapper" style="display: block">
+        <ul>
+          <li>
+            <input class="collapsible" type="checkbox" id="list-item-1" />
+            <label class="c-label" for="list-item-1" class="first"
+              >⮟ Minimap</label
+            >
+            <ul style="display: flex; justify-content: center">
+              <img
+                src="https://i.imgur.com/TGING6d.png"
+                style="width: 100%; max-width: 400px; border: 0px solid black"
+              />
+            </ul>
+          </li>
+          <li>
+            <input class="collapsible" type="checkbox" id="list-item-2" />
+            <label class="c-label" for="list-item-2">⮞ Level Properties</label>
+            <ul class="pushed">
+              <li>
+                <div style="padding-top: 8px">
+                  <input id="allow-commands" type="checkbox" />
+                  <label for="allow-commands">Allow commands</label>
+                </div>
+              </li>
+              <div class="rowable">
+                <li>
+                  <p>Border X</p>
+                  <input class='my-input' type="number" />
+                </li>
+                <li>
+                  <p>Border Y</p>
+                  <input class='my-input' type="number" />
+                </li>
+                <li>
+                  <p>Border Z</p>
+                  <input class='my-input' type="number" />
+                </li>
+              </div>
+
+              <li>Oswald</li>
+            </ul>
+          </li>
+          <li>
+            <input class="collapsible" type="checkbox" id="list-item-3" />
+            <label class="c-label" for="list-item-3" class="last">⮞ Level Data</label>
+            <ul>
+                <button class='btn'>Edit entities</button>
+                <button class='btn'>Edit block entities</button>
+                <button class='btn'>Edit level NBT</button>
+            </ul>
+          </li>
+        </ul>
+      </div>
+
+      <style>
+        .playerbox div {
+          padding-bottom: 10px;
+        }
+
+        .btn {
+          background-color: rgb(34, 16, 16);
+          color: green;
+          font-weight: bold;
+          color: yellow;
+          border: 1px solid #564f4f;
+          padding: 8px;
+          margin: 8px;
+        }
+
+        .btn:hover {
+          background-color: rgb(34, 16, 16);
+          color: white;
+          cursor: pointer;
+        }
+      </style>
+
+      <div class="wrapper" style='display:none;'>
+        <ul>
+
+        <li>
+            <input style='width: 100%;padding-left: 0;padding-right: 0;' type="text" class='my-input' placeholder="Search for a player" />
+        </li>
+
+          <li>
+            <input class="collapsible" type="checkbox" id="list-item-a1" />
+            <label
+              class="c-label playerbox"
+              for="list-item-a1"
+              style="color: white"
+            >
+              <div>
+                ⮞
+                <img
+                  style="
+                    height: 32px;
+                    width: 32px;
+                    display: inline-block;
+                    vertical-align: middle;
+                  "
+                  src="https://static.wikia.nocookie.net/minecraft/images/2/29/HeadsZ.gif/revision/latest?cb=20190322094900"
+                />
+                MyPlayer
+              </div>
+              <div style="font-size: x-small">
+                cac41f5c-3f0b-4366-b98a-96b2571419b2
+              </div>
+              <div style="font-size: small">2 days ago</div>
+            </label>
+            <ul class="pushed" style="text-align: center">
+              <div style="padding: 10px;">
+                <b>Position</b>: -12, +24, -365
+              </div>
+              <button class='btn'>Edit player position</button>
+              <button class='btn'>Edit player inventory</button>
+              <!-- <button>Go to player position</button> -->
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Compiled and minified JavaScript -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script>
+        let options = {};
+        document.addEventListener('DOMContentLoaded', function() {
+    var elems = document.querySelectorAll('.collapsible');
+    var instances = M.Collapsible.init(elems, options);
+  });
+    </script> -->
+
+    <script src="../assets/palette.js"></script>
+    <script>
+      const palette = new PaletteCommand();
+
+      let cats = [];
+      for (var i = 1; i < 9; i++) {
+        cats.push({
+          name: i,
+          description: "View Distance",
+        });
+      }
+
+      palette.setCategory(cats);
+
+      //   palette.setCategory([
+      //     {
+      //       name: "View distance: 4",
+      //       description: "View Distance",
+      //       action() {
+      //         console.log("Advanced interactivity, It's just for testing");
+      //       },
+      //     },
+      //   ]);
+
+      palette.show();
+    </script>
+  </body>
+</html>

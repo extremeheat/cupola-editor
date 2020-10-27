@@ -1,0 +1,47 @@
+#home {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.box {
+  display: flex;
+  align-content: center;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.boxc {
+  background-color: #00000080;
+  color: white;
+  text-align: center;
+  padding: 2%;
+}
+
+.header {
+  font-size: 22px;
+}
+
+.btn {
+  background-color: rgb(34, 16, 16);
+  color: green;
+  font-weight: bold;
+  color: yellow;
+  border: 1px solid #564f4f;
+  padding: 8px;
+  margin: 8px;
+}
+
+.btn:hover {
+  background-color: rgb(34, 16, 16);
+  color: white;
+  cursor: pointer;
+}
+
+.left, .right {
+  vertical-align: middle;
+  display: inline-block;
+}

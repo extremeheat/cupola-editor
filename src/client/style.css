@@ -1,0 +1,77 @@
+body {
+    height: 100vh;
+    width: 100vw;
+}
+
+body {
+    background-image: url(../assets/minecraft.png);
+    background-color: skyblue;
+    background-size: cover;
+    transition: background-image 1s;
+
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    margin: 0;
+    user-select: none;
+
+    --ui-bg-col: #000000A0;
+}
+
+.debug-info {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    color: white;
+    background-color: #00000050;
+}
+
+.select, .textinput {
+    padding: 6px;
+}
+
+.formcontrol {
+    /* display: block; */
+    width: 100%;
+    padding: .375rem .75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+
+textarea:focus, input:focus{
+    /* outline: none; */
+    outline-color: rgb(129, 129, 255);
+}
+
+.clickable:hover {
+    cursor: pointer;
+}
+.unclickable:hover {
+    cursor: not-allowed;
+}
+
+.emojii {
+    vertical-align: bottom;
+}
+
+/* Button */
+
+.btn {
+    background-color: rgb(34, 16, 16);
+    color: green;
+    font-weight: bold;
+    color: yellow;
+    border: 1px solid #564f4f;
+    padding: 8px;
+    margin: 8px;
+}
+
+.btn:hover {
+    background-color: rgb(34, 16, 16);
+    color: white;
+    cursor: pointer;
+}

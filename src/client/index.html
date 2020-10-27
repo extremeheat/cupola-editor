@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8" />
+	<title>Hello World!</title>
+	<!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+	<!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'" /> -->
+	<!-- <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'" /> -->
+
+	<link rel="stylesheet" href="../assets/animate.css" />
+	<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+	<div class='debug-info'>
+		Node.js <span id="node-version"></span>,
+		Chromium <span id="chrome-version"></span>,
+		Electron <span id="electron-version"></span>.
+	</div>
+
+	<div id="app"></div>
+
+	<!-- You can also require other files to run in this process -->
+	<script src="app.js" type="module"></script>
+</body>
+
+</html>

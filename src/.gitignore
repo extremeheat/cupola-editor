@@ -4,6 +4,5 @@ client/*.js
 editor/*.js
 editor/sidebar/*.js
 renderer/
-_local
-# still need to work on viewer...
-viewer
+_*
+core/*

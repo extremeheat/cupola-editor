@@ -167,10 +167,12 @@ function renderElement (world, cursor, element, doAO, attr, globalMatrix, global
 
     if (eFace.cullface) {
       const neighbor = world.getBlock(cursor.plus(new Vec3(...dir)))
-      if (!neighbor) continue
-      if (cullIfIdentical && neighbor.type === block.type) continue
-      if (!neighbor.transparent && neighbor.isCube) continue
-      if (neighbor.position.y < 0) continue
+      if (!neighbor && !globalThis.noEmptyNeighborCulling) continue
+      if (neighbor) {
+        if (cullIfIdentical && neighbor.type === block.type) continue
+        if (!neighbor.transparent && neighbor.isCube) continue
+        if (neighbor.position.y < 0) continue
+      }
     }
 
     const minx = element.from[0]
@@ -324,7 +326,7 @@ function getSectionGeometry (sx, sy, sz, world, blocksStates) {
             }
 
             for (const element of variant.model.elements) {
-              renderElement(world, cursor, element, variant.model.ao, attr, globalMatrix, globalShift, block)
+              renderElement(world, cursor, element, globalThis.skipAO ? false : variant.model.ao, attr, globalMatrix, globalShift, block)
             }
           }
         }

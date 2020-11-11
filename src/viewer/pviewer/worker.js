@@ -3,6 +3,8 @@
 const { Vec3 } = require('vec3')
 const { World } = require('./world')
 const { getSectionGeometry } = require('./models')
+// https://github.com/electron/electron/issues/2288#issuecomment-123147993
+const isElectron = globalThis.process && globalThis.process.type
 
 function getJSON (url, callback) {
   const xhr = new XMLHttpRequest()
@@ -20,10 +22,12 @@ function getJSON (url, callback) {
 }
 
 let blocksStates = null
-getJSON('blocksStates.json', (err, json) => {
-  if (err) return
-  blocksStates = json
-})
+if (!isElectron) {
+  getJSON('blocksStates.json', (err, json) => {
+    if (err) return
+    blocksStates = json
+  })
+}
 
 let world = null
 
@@ -48,6 +52,9 @@ function setSectionDirty (pos, value = true) {
 self.onmessage = ({ data }) => {
   if (data.type === 'version') {
     world = new World(data.version)
+    blocksStates = blocksStates || data.states
+    globalThis.noEmptyNeighborCulling = data.noEmptyNeighborCulling
+    globalThis.skipAO = data.skipAO
   } else if (data.type === 'dirty') {
     const loc = new Vec3(data.x, data.y, data.z)
     setSectionDirty(loc, data.value)
@@ -62,7 +69,7 @@ self.onmessage = ({ data }) => {
 }
 
 setInterval(() => {
-  if (world === null || blocksStates === null) return
+  if (!world || !blocksStates) return
   const sections = Object.keys(dirtySections)
 
   if (sections.length === 0) return

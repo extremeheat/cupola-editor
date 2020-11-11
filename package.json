@@ -1,19 +1,17 @@
 {
   "name": "mceditor.js",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "A world editor for Minecraft",
   "main": "src/main/index.js",
   "scripts": {
     "test": "jest --verbose",
     "pretest": "npm run lint && require-self",
     "prepare": "npm install require-self && require-self",
-    "lint": "standard",
-    "fix": "standard --fix",
     "build": "tsc && tsc -p src/tsconfig.json",
     "watch": "tsc -w",
     "start": "npm run build && electron .",
     "pack": "electron-builder --dir",
-    "dist": "npm build && electron-builder",
+    "dist": "npm run build && electron-builder",
     "postinstall": "electron-builder install-app-deps"
   },
   "repository": {
@@ -21,8 +19,8 @@
     "url": "git+https://github.com/extremeheat/mceditor.js.git"
   },
   "keywords": [
-    "prismarine",
-    "template"
+    "minecraft",
+    "editor"
   ],
   "author": "extremeheat",
   "license": "MIT",
@@ -40,10 +38,9 @@
   },
   "dependencies": {
     "@types/three": "^0.103.2",
-    "canvas": "^2.6.1",
     "electron-progressbar": "^1.2.0",
     "preact": "^10.5.5",
-    "prismarine-viewer": "^1.6.0",
+    "prismarine-provider-anvil": "^2.3.1",
     "three": "^0.121.1"
   },
   "build": {

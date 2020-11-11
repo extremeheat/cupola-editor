@@ -1,6 +1,6 @@
 'use strict'
 
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, globalShortcut, ipcMain } from 'electron'
 import * as path from 'path'
 // import { format as formatUrl } from 'url'
 // // import { prepare } from './AssetLoader'
@@ -26,7 +26,7 @@ function createMainWindow() {
         window.webContents.openDevTools()
     }
 
-    window.loadFile(path.join(__dirname, "../client/index.html"));
+    window.loadFile(path.join(__dirname, "../viewer/index.html"));
 
     window.on('closed', () => {
         mainWindow = null
@@ -80,6 +80,10 @@ app.on('activate', () => {
 app.on('ready', () => {
     mainWindow = createMainWindow()
 
+    // Do not close on ctrl+w
+    globalShortcut.register("CommandOrControl+W", () => {
+        //stuff here
+    });
 })
 
 function showProgressBar(mainWindow) {

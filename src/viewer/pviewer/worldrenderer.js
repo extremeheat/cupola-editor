@@ -11,14 +11,8 @@ class WorldRenderer {
     this.sectionMeshs = {}
     this.scene = scene
     this.loadedChunks = {}
-
-    const texture = new THREE.TextureLoader().load('texture.png')
-    texture.magFilter = THREE.NearestFilter
-    texture.minFilter = THREE.NearestFilter
-    texture.flipY = false
-    this.material = new THREE.MeshLambertMaterial({ map: texture, vertexColors: true, transparent: true, alphaTest: 0.1 })
-
     this.workers = []
+
     for (let i = 0; i < numWorkers; i++) {
       const worker = new Worker('worker.js')
       worker.onmessage = ({ data }) => {
@@ -46,21 +40,29 @@ class WorldRenderer {
     }
   }
 
-  setVersion (version) {
+  setVersion (version, blockStates, atlasURI, skipAO, noEmptyNeighborCulling) {
+    console.info('using atlas uri', atlasURI)
+    const texture = new THREE.TextureLoader().load(atlasURI || 'texture.png')
+    texture.magFilter = THREE.NearestFilter
+    texture.minFilter = THREE.NearestFilter
+    texture.flipY = false
+    this.material = new THREE.MeshLambertMaterial({ map: texture, vertexColors: true, transparent: true, alphaTest: 0.1 })
+
     for (const mesh of Object.values(this.sectionMeshs)) {
       this.scene.remove(mesh)
     }
     this.sectionMeshs = {}
     for (const worker of this.workers) {
-      worker.postMessage({ type: 'version', version })
+      worker.postMessage({ type: 'version', version, states: blockStates, skipAO, noEmptyNeighborCulling })
     }
   }
 
   addColumn (x, z, chunk) {
     this.loadedChunks[`${x},${z}`] = true
     for (const worker of this.workers) {
-      worker.postMessage({ type: 'chunk', x, z, chunk })
+      worker.postMessage({ type: typeof chunk == 'object' ? 'loadChunk' : 'chunk', x, z, chunk })
     }
+
     for (let y = 0; y < 256; y += 16) {
       const loc = new Vec3(x, y, z)
       this.setSectionDirty(loc)
@@ -103,6 +105,11 @@ class WorldRenderer {
     // is always dispatched to the same worker
     const hash = mod(Math.floor(pos.x / 16) + Math.floor(pos.y / 16) + Math.floor(pos.z / 16), this.workers.length)
     this.workers[hash].postMessage({ type: 'dirty', x: pos.x, y: pos.y, z: pos.z, value })
+  }
+
+  getWorkerForPos (pos) {
+    const hash = mod(Math.floor(pos.x / 16) + Math.floor(pos.y / 16) + Math.floor(pos.z / 16), this.workers.length)
+    this.workers[hash]
   }
 }
 

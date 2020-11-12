@@ -7,7 +7,9 @@ class Editor3D extends Viewer3D {
     super(viewer)
     this.viewer = viewer
 
-    this.hLastPos = new THREE.Vector3()
+    // Raycasted coordinate user is looking at
+    this.lastFarLookingPos = new THREE.Vector3()
+    this.lastNearLookingPos = new THREE.Vector3()
     this.highlightMesh = null
     this.selection = null
     this.lastPos3D = null
@@ -21,21 +23,12 @@ class Editor3D extends Viewer3D {
   onStarted() {
     super.onStarted()
     this.highlightMesh = addBlockHighlight()
-  }
 
-  onPointerMove(event) {
-    super.onPointerMove(event)
-
-    this.onUpdate()
-  }
-
-  onCursorControlClick(vec3) {
-    console.log('Got ctrl click', this.lastPos3D)
-    if (!this.selection) {
-      this.startSelection()
-    }
-
-    this.selection.addPoint(this.lastPos3D)
+    // this.box = new THREE.Mesh(new THREE.BoxBufferGeometry(), new THREE.MeshBasicMaterial({
+    //   color: "red",
+    //   wireframe: true
+    // }));
+    // scene.add(this.box);
   }
 
   blockHighlight(x, y, z) {
@@ -43,7 +36,7 @@ class Editor3D extends Viewer3D {
     this.highlightMesh.position.set(x, y, z)
   }
 
-  onUpdate() {
+  onControlUpdate(event) {
     this.raycaster.setFromCamera(this.mousePos, global.camera);
 
     if (this.mousePos.equals(this.lastCursorPos)) {
@@ -51,12 +44,33 @@ class Editor3D extends Viewer3D {
     }
     this.lastCursorPos = this.mousePos.clone()
 
+    this.raycaster.ray.at(40, this.lastFarLookingPos)
+    this.raycaster.ray.at(4, this.lastNearLookingPos)
+
     let children = Object.values(global.world.sectionMeshs)
 
     if (this.selection) {
       let mesh = this.selection.getSelectionMesh()
       if (mesh) {
         children.push(mesh)
+      }
+
+      // Highlight on expansion mesh
+      // let exp = this.selection.getExpansionMeshes()
+      // if (exp) {
+      //   for (var e of exp) {
+      //     // children.push(e)
+      //   }
+      // }
+
+      // var dist = this.box.position.clone().sub(camera.position).length();
+      // this.raycaster.ray.at(4, this.box.position);
+
+      // console.log('-> Looking' , this.lastNearLookingPos, this.lastFarLookingPos)
+      let handled = this.selection.handleCursorMove(event, this.lastFarLookingPos)
+      if (handled) {
+        event.stopPropagation()
+        return
       }
     }
 
@@ -94,6 +108,23 @@ class Editor3D extends Viewer3D {
     super.onRender()
     // this.onUpdate()
     // console.info('r')
+  }
+
+  // DOM EVENTS
+
+  onPointerMove(event) {
+    super.onPointerMove(event)
+
+    this.onControlUpdate(event)
+  }
+
+  onCursorControlClick(vec3) {
+    console.log('Got ctrl click', this.lastPos3D)
+    if (!this.selection) {
+      this.startSelection()
+    }
+
+    this.selection.addPoint(this.lastPos3D)
   }
 
   onClick = (event) => {

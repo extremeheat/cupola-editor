@@ -1,8 +1,8 @@
 const DemoViewerProvider = require('./DemoProvider');
 const Editor3D = require('./editor')
 
-var viewerProvider = null;
-var viewer = null;
+global.viewerProvider = null;
+global.viewer = null;
 
 function init() {
   // Controlers:

@@ -8,11 +8,17 @@ class Selection {
     this.activeFace = null
     this.selectedVerticies = []
     this.opStack = []
-    this.startedDragging = true
+    this.startedDragging = false
+    this.vertsBeforeDragging = null
+    this.draggingHistory = []
   }
 
   getSelectionMesh() {
     return this.overlay.selectionMesh
+  }
+
+  getExpansionMeshes() {
+    return this.overlay.expandMeshes
   }
 
   handleRaycast(intersects) {
@@ -30,18 +36,48 @@ class Selection {
       }
     }
 
-    if (!isMakingSelection) this.activeFace = null
+
+    if (!isMakingSelection && !this.startedDragging) {
+      // console.warn('Erased activeFace')
+      this.overlay.emptyActiveFace()
+    }
   }
 
   handlePointerDown() {
-    if (this.activeFace) {
+    // console.warn('Pointr down')
+    if (this.overlay.activeFace && !this.startedDragging) {
       this.startedDragging = true
+      this.vertsBeforeDragging = cloneVector3a(this.overlay.getSelectionVerts())
+      // console.warn('Start draggig', this.vertsBeforeDragging)
     }
   }
 
   handlePointerUp() {
     if (this.startedDragging) {
+      // console.warn('End draggig')
       this.startedDragging = false
+      this.vertsBeforeDragging = null
+    }
+  }
+
+  handleCursorMove(event, raypos) {
+    if (this.startedDragging) {
+      let last = this.draggingHistory[this.draggingHistory.length - 1]
+      let first = this.draggingHistory[0]
+      if (last) {
+        let dx = last.x - first.x
+        let dy = last.y - first.y
+        let dz = last.z - first.z
+        // deltas are relative to first drag event, so we need to
+        // restore the box size to how it was on first drag event
+        this.restoreSize()
+        this.resize(dx, dy, dz)
+      }
+      this.draggingHistory.push(raypos.clone())
+      // console.log('[sel] drag histor ',this.draggingHistory)
+      return true
+    } else {
+      this.draggingHistory = []
     }
   }
 
@@ -52,7 +88,7 @@ class Selection {
         this.overlay.fromPoints(this.selectedVerticies[0], position)
       }, 50);
     } else if (this.selectedVerticies.length == 2) {
-
+      // nothing
     }
   }
 
@@ -68,7 +104,24 @@ class Selection {
 
   // The user would like to resize a selection (box) or add
   // points to the selection (freeform)
-  resize() { }
+  resize(dx, dy, dz, temporary = true) {
+    let af = this.overlay.getActiveFace()
+    console.log('[selection] resize', af, dx, dy, dz)
+    if (af.x != 0) this.overlay.expandActiveFace(dx)
+    if (af.y != 0) this.overlay.expandActiveFace(dy)
+    if (af.z != 0) this.overlay.expandActiveFace(dz)
+
+    if (!temporary) {
+      this.vertsBeforeDragging = cloneVector3a(this.overlay.getSelectionVerts())
+    }
+  }
+
+  // Revert our changes to size - called before every step of resize()
+  // and when user selects escape to undo a drag op
+  restoreSize() {
+    this.overlay.setSelectionVerts(cloneVector3a(this.vertsBeforeDragging))
+    // console.log('[selection] restore', this.overlay.getSelectionVerts(), this.vertsBeforeDragging)
+  }
 
   // The user 'finializes' the selection and it is now 'staged'
   // Box changes from red to green so the user knows they
@@ -83,14 +136,14 @@ class Selection {
 
   // Start copying the selection, make a clone of the existing one
   // by calling pull(), then this new selection can be transformed
-  copy() {}
+  copy() { }
 
   // Cutting the selection clones the selection using pull() then
   // gets ready clears the area inside the selection
-  cut() {}
+  cut() { }
 
   // Actually executes the copy/cut operation
-  paste() {}
+  paste() { }
 }
 
 class BlockSelection extends Selection {
@@ -107,6 +160,14 @@ class FreeformBoxSelection extends Selection {
 
 class ChunkSelection extends Selection {
 
+}
+
+function cloneVector3a(array) {
+  let next = []
+  for (var e of array) {
+    next.push(e.clone())
+  }
+  return next
 }
 
 module.exports = { Selection }

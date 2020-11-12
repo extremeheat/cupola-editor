@@ -33,14 +33,16 @@ class SelectionBox {
     let geometry = new THREE.BoxGeometry(width, height, length)
     geometry.translate(0.5, 0.5, 0.5)
 
+    // TODO: Better block texture for selection box so easier
+    // to see block boundaries. 
     let material = new THREE.MeshBasicMaterial({
       transparent: true,
       opacity: 0.5,
       color: 0x880000,
       vertexColors: THREE.FaceColors, // allow us to recolor sides
-      depthTest: false,
+      // depthTest: false,
     })
-  
+
     let wireframeMaterial = new THREE.MeshBasicMaterial({
       transparent: true,
       opacity: 1,
@@ -55,24 +57,24 @@ class SelectionBox {
     mesh.name = "selection"
     let wireframeMesh = new THREE.Mesh(geometry, wireframeMaterial)
     wireframeMesh.renderOrder = 9;
-  
+
     let cp = getCenterPoint(mesh)
     console.log('Center point', cp)
-  
+
     global.scene.add(mesh)
     global.scene.add(wireframeMesh)
     this.selectionMesh = mesh
     this.wireframeMesh = wireframeMesh
 
-    let boxes = addExpandedSelectionBox(mesh.geometry.vertices)
-    
-    for (var box of boxes) {
-      console.log('[box] expanded: ', box)
-      box.computeBoundingBox();
-      let _mesh = new THREE.Mesh(box, wireframeMaterial)
-      this.expandMeshes.push(_mesh)
-      global.scene.add(_mesh);
-    }
+    // let boxes = addExpandedSelectionBox(mesh.geometry.vertices)
+
+    // for (var box of boxes) {
+    //   console.log('[box] expanded: ', box)
+    //   box.computeBoundingBox();
+    //   let _mesh = new THREE.Mesh(box, wireframeMaterial)
+    //   this.expandMeshes.push(_mesh)
+    //   global.scene.add(_mesh);
+    // }
   }
 
   fromPoints(point1, point2) {
@@ -90,8 +92,18 @@ class SelectionBox {
     return center.clone()
   }
 
+  emptyActiveFace() {
+    if (this.activeFace) {
+      for (var face of this.selectionMesh.geometry.faces) {
+        face.color.setHex(0x880000) //reset the default color
+      }
+      this.activeFace = false;
+    }
+  }
+
   setActiveFace(n) {
     let updatedColors = false
+
     for (var face of this.selectionMesh.geometry.faces) {
       if (face.normal.equals(n)) {
         face.color.setHex(0x00ffff)
@@ -103,14 +115,48 @@ class SelectionBox {
         face.color.setHex(0x880000) //reset the default color
       }
     }
+
     if (updatedColors) {
       this.selectionMesh.geometry.colorsNeedUpdate = true
       // isMakingSelection = true
       // break;
     } else {
-      this.activeFace = null
+      // console.warn('Erased activeFace', n)
+      this.emptyActiveFace()
     }
+    // console.log('updated face', updatedColors)
     return updatedColors
+  }
+
+  getActiveFace() {
+    return this.activeFace
+  }
+
+  expandActiveFace(factor) {
+    if (!this.activeFace) {
+      console.warn('[overlay] no active face')
+      return
+    }
+
+    let mod = Math.floor(factor)
+
+    let g = this.selectionMesh.geometry
+    // console.log('EXPAND', mod, JSON.stringify(g.vertices))
+
+    expandGeometry(g, this.activeFace, mod)
+    // console.log('EXPANDed', JSON.stringify(g.vertices))
+  }
+
+  getSelectionVerts() {
+    return this.selectionMesh.geometry.vertices
+  }
+
+  setSelectionVerts(verts) {
+    for (var i = 0; i < verts.length; i++) {
+      let vert = this.selectionMesh.geometry.vertices[i]
+      vert.set(verts[i].x, verts[i].y, verts[i].z)
+    }
+    // return this.selectionMesh.geometry.vertices = verts
   }
 
   // Box is red
@@ -144,7 +190,7 @@ function getCenterPoint(mesh) {
   return center;
 }
 
-function addExpandedSelectionBox(vertices) {
+function addExpandedSelectionBox(vertices, factor = 20) {
   let xmin = ymin = zmin = Infinity
   let xmax = ymax = zmax = null
 
@@ -162,7 +208,7 @@ function addExpandedSelectionBox(vertices) {
   let xminVerts = [], yminVerts = [], zminVerts = []
   let xmaxVerts = [], ymaxVerts = [], zmaxVerts = []
 
-  const expansion = 20
+  const expansion = factor
 
   for (var vert of vertices) {
     if (vert.x == xmin) xminVerts.push([vert.x, vert.y, vert.z], [vert.x - expansion, vert.y, vert.z])
@@ -185,13 +231,40 @@ function addExpandedSelectionBox(vertices) {
   xminGeom.axes = 'xmin'; yminGeom.axes = 'ymin'; zminGeom.axes = 'zmin'
   xmaxGeom.axes = 'xmax'; ymaxGeom.axes = 'ymax'; zmaxGeom.axes = 'zmax'
 
-  console.warn('XX', xminVerts, yminVerts, zminVerts, xmaxVerts, ymaxVerts, zmaxVerts)
+  // console.warn('XX', xminVerts, yminVerts, zminVerts, xmaxVerts, ymaxVerts, zmaxVerts)
 
   let geoms = [xminGeom, yminGeom, zminGeom, xmaxGeom, ymaxGeom, zmaxGeom]
   // for (var geom of geoms) {
   //   geom.translate(xmin, ymin, zmin)
   // }
   return geoms
+}
+
+function expandGeometry(geometry, face, mod) {
+  let xmin = ymin = zmin = Infinity
+  let xmax = ymax = zmax = null
+
+  for (var vert of geometry.vertices) {
+    xmin = vert.x < xmin ? vert.x : xmin
+    ymin = vert.y < ymin ? vert.y : ymin
+    zmin = vert.z < zmin ? vert.z : zmin
+    xmax = vert.x > xmax ? vert.x : xmax
+    ymax = vert.y > ymax ? vert.y : ymax
+    zmax = vert.z > zmax ? vert.z : zmax
+  }
+
+  for (var vert of geometry.vertices) {
+    if (face.x > 0 && vert.x == xmax) { vert.x += mod; }
+    if (face.y > 0 && vert.y == ymax) { vert.y += mod; }
+    if (face.z > 0 && vert.z == zmax) { vert.z += mod; }
+    if (face.x < 0 && vert.x == xmin) { vert.x += mod; }
+    if (face.y < 0 && vert.y == ymin) { vert.y += mod; }
+    if (face.z < 0 && vert.z == zmin) { vert.z += mod; }
+  }
+
+  geometry.verticesNeedUpdate = true
+  geometry.computeBoundingBox()
+  geometry.computeBoundingSphere()
 }
 
 // HOVER HIGHLIGHT

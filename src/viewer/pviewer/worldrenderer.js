@@ -40,6 +40,41 @@ class WorldRenderer {
     }
   }
 
+  createMeshFromGeometry (data) {
+    const geometry = new THREE.BufferGeometry()
+    geometry.setAttribute('position', new THREE.BufferAttribute(data.geometry.positions, 3))
+    geometry.setAttribute('normal', new THREE.BufferAttribute(data.geometry.normals, 3))
+    geometry.setAttribute('color', new THREE.BufferAttribute(data.geometry.colors, 3))
+    geometry.setAttribute('uv', new THREE.BufferAttribute(data.geometry.uvs, 2))
+    geometry.setIndex(data.geometry.indices)
+
+    let mesh = new THREE.Mesh(geometry, this.material)
+    return mesh
+  }
+
+  // start extra worker for utility
+  startSpecialWorker() {
+    this.specialWorker = new Worker('worker.js')
+
+    this.specialWorker.onmessage = ({ data }) => {
+      if (data.type == 'specialGeometry') {
+        if (!this.specialGeomRequest) return
+        let mesh = this.createMeshFromGeometry(data)
+        this.specialGeomRequest(mesh)
+        this.specialGeomRequest = null
+      }
+    }
+  }
+
+  requestMesh (container, callback) {
+    if (!this.specialWorker) this.startSpecialWorker()
+    if (this.specialGeomRequest) return
+
+    // TODO: Look into zero-copy here
+    this.specialWorker.postMessage({ type: 'computeGeometry', container: container.toJson() })
+    this.specialGeomRequest = callback
+  }
+
   setVersion (version, blockStates, atlasURI, skipAO, noEmptyNeighborCulling) {
     console.info('using atlas uri', atlasURI)
     const texture = new THREE.TextureLoader().load(atlasURI || 'texture.png')
@@ -55,6 +90,8 @@ class WorldRenderer {
     for (const worker of this.workers) {
       worker.postMessage({ type: 'version', version, states: blockStates, skipAO, noEmptyNeighborCulling })
     }
+    if (!this.specialWorker) this.startSpecialWorker()
+    this.specialWorker.postMessage({ type: 'version', version, states: blockStates, skipAO, noEmptyNeighborCulling })
   }
 
   addColumn (x, z, chunk) {

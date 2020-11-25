@@ -24,10 +24,34 @@
             margin: 0;
             padding: 0;
         }
+
+        .bottom-overlay {
+            position: fixed;
+            bottom: 5%;
+            text-align: center;
+            left:0;right:0;
+            z-index: 10;
+        }
+        .text-overlay {
+            background-color: #0c0c0cb6;
+            color: yellow;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+            font-size: 16px;
+            border-radius: 12px;
+            padding: 12px;
+            margin: 10px;
+        }
     </style>
 </head>
 
 <body>
+
+    <div class="bottom-overlay">
+        <!-- <span class="text-overlay">
+            
+        </span> -->
+    </div>
+
     <script type="text/javascript" src="stats.js" type="module"></script>
     <script>
 
@@ -38,6 +62,7 @@
     </script>
     <!-- <script type="text/javascript" src="pviewer/index.js"></script> -->
     <script type="text/javascript" src="index.js"></script>
+    <script src="overlays.js"></script>
 </body>
 
 </html>

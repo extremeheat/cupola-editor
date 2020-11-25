@@ -69,7 +69,7 @@ const elemFaces = {
   }
 }
 
-function renderLiquid (world, cursor, texture, type, water, attr) {
+function renderLiquid (world, cursor, texture, type, water, attr, noAlign) {
   const blockAbove = world.getBlock(cursor.plus(new Vec3(0, 1, 0)))
   const liquidHeight = (blockAbove.type === type ? 16 : 14) / 16
 
@@ -95,10 +95,18 @@ function renderLiquid (world, cursor, texture, type, water, attr) {
     const ndx = Math.floor(attr.positions.length / 3)
 
     for (const pos of corners) {
-      attr.positions.push(
-        (pos[0] ? 1 : 0) + (cursor.x & 15) - 8,
-        (pos[1] ? liquidHeight : 0) + (cursor.y & 15) - 8,
-        (pos[2] ? 1 : 0) + (cursor.z & 15) - 8)
+      if (noAlign) {
+        attr.positions.push(
+          (pos[0] ? 1 : 0) + (cursor.x) - 8,
+          (pos[1] ? liquidHeight : 0) + (cursor.y) - 8,
+          (pos[2] ? 1 : 0) + (cursor.z) - 8)
+      } else {
+        attr.positions.push(
+          (pos[0] ? 1 : 0) + (cursor.x & 15) - 8,
+          (pos[1] ? liquidHeight : 0) + (cursor.y & 15) - 8,
+          (pos[2] ? 1 : 0) + (cursor.z & 15) - 8)
+      }
+      
       attr.normals.push(...dir)
 
       attr.uvs.push(pos[3] * su + u, pos[4] * sv + v)
@@ -157,7 +165,7 @@ function buildRotationMatrix (axis, degree) {
   return matrix
 }
 
-function renderElement (world, cursor, element, doAO, attr, globalMatrix, globalShift, block) {
+function renderElement (world, cursor, element, doAO, attr, globalMatrix, globalShift, block, noAlign) {
   const cullIfIdentical = block.name.indexOf('glass') >= 0
 
   for (const face in element.faces) {
@@ -231,11 +239,19 @@ function renderElement (world, cursor, element, doAO, attr, globalMatrix, global
       vertex = vecadd3(matmul3(globalMatrix, vertex), globalShift)
       vertex = vertex.map(v => v / 16)
 
-      attr.positions.push(
-        vertex[0] + (cursor.x & 15) - 8,
-        vertex[1] + (cursor.y & 15) - 8,
-        vertex[2] + (cursor.z & 15) - 8
-      )
+      if (noAlign) {
+        attr.positions.push(
+          vertex[0] + (cursor.x) - 8,
+          vertex[1] + (cursor.y) - 8,
+          vertex[2] + (cursor.z) - 8
+        )        
+      } else {
+        attr.positions.push(
+          vertex[0] + (cursor.x & 15) - 8,
+          vertex[1] + (cursor.y & 15) - 8,
+          vertex[2] + (cursor.z & 15) - 8
+        )
+      }
 
       attr.normals.push(...dir)
 
@@ -283,7 +299,7 @@ function renderElement (world, cursor, element, doAO, attr, globalMatrix, global
   }
 }
 
-function getSectionGeometry (sx, sy, sz, world, blocksStates) {
+function getSectionGeometry (sx, sy, sz, world, blocksStates, h = 16, w = 16, l = 16, noAlign = false) {
   const attr = {
     sx: sx + 8,
     sy: sy + 8,
@@ -296,9 +312,9 @@ function getSectionGeometry (sx, sy, sz, world, blocksStates) {
   }
 
   const cursor = new Vec3(0, 0, 0)
-  for (cursor.y = sy; cursor.y < sy + 16; cursor.y++) {
-    for (cursor.z = sz; cursor.z < sz + 16; cursor.z++) {
-      for (cursor.x = sx; cursor.x < sx + 16; cursor.x++) {
+  for (cursor.y = sy; cursor.y < sy + h; cursor.y++) {
+    for (cursor.z = sz; cursor.z < sz + l; cursor.z++) {
+      for (cursor.x = sx; cursor.x < sx + w; cursor.x++) {
         const block = world.getBlock(cursor)
         if (block.variant === undefined) {
           block.variant = getModelVariants(block, blocksStates)
@@ -308,9 +324,9 @@ function getSectionGeometry (sx, sy, sz, world, blocksStates) {
           if (!variant || !variant.model) continue
 
           if (block.name === 'water') {
-            renderLiquid(world, cursor, variant.model.textures.particle, block.type, true, attr)
+            renderLiquid(world, cursor, variant.model.textures.particle, block.type, true, attr, noAlign)
           } else if (block.name === 'lava') {
-            renderLiquid(world, cursor, variant.model.textures.particle, block.type, false, attr)
+            renderLiquid(world, cursor, variant.model.textures.particle, block.type, false, attr, noAlign)
           } else {
             let globalMatrix = null
             let globalShift = null
@@ -326,7 +342,7 @@ function getSectionGeometry (sx, sy, sz, world, blocksStates) {
             }
 
             for (const element of variant.model.elements) {
-              renderElement(world, cursor, element, globalThis.skipAO ? false : variant.model.ao, attr, globalMatrix, globalShift, block)
+              renderElement(world, cursor, element, globalThis.skipAO ? false : variant.model.ao, attr, globalMatrix, globalShift, block, noAlign)
             }
           }
         }

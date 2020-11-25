@@ -1,5 +1,6 @@
 class SelectionBox {
-  constructor() {
+  constructor(id) {
+    this.id = id
     this.selectionMesh = null
     // Outline
     this.wireframeMesh = null
@@ -8,6 +9,11 @@ class SelectionBox {
 
     // Used for expanding selection box
     this.expandMeshes = []
+
+    this.unconfirmedColor = 0x880000
+    this.confirmedColor = 0x008800
+
+    this.color = this.unconfirmedColor
   }
 
   clear() {
@@ -21,24 +27,33 @@ class SelectionBox {
     }
   }
 
-  addSelectionBox(pos1, pos2) {
+  addSelectionBox(pos1, pos2, noTrans) {
     this.clear()
     console.log('Create box from ', pos1, pos2)
 
-    let height = Math.abs(Math.min(pos1.y, pos2.y) - Math.max(pos1.y, pos2.y)) + 1.01
-    let width = Math.abs(Math.min(pos1.x, pos2.x) - Math.max(pos1.x, pos2.x)) + 1.01
-    let length = Math.abs(Math.min(pos1.z, pos2.z) - Math.max(pos1.z, pos2.z)) + 1.01
+    let height = Math.abs(Math.min(pos1.y, pos2.y) - Math.max(pos1.y, pos2.y)) + 1
+    let width = Math.abs(Math.min(pos1.x, pos2.x) - Math.max(pos1.x, pos2.x)) + 1
+    let length = Math.abs(Math.min(pos1.z, pos2.z) - Math.max(pos1.z, pos2.z)) + 1
     console.log('[box] HWL', height, width, length, pos1, pos2)
 
-    let geometry = new THREE.BoxGeometry(width, height, length)
-    geometry.translate(0.5, 0.5, 0.5)
+    let geometry = new THREE.BoxGeometry(width + 0.01, height + 0.01, length + 0.01)
+    if (noTrans) {
+      geometry.translate(width % 2 == 0 ? 0 : 0.5, 
+        height % 2 == 0 ? 0 : 0.5, length % 2 == 0 ? 0 : 0.5)
+      // console.log('HWL Translated', width % 2 == 0 ? 0 : 0.5, height % 2 == 0 ? 0 : 0.5,
+      //   length % 2 == 0 ? 0 : 0.5)
+    } else {
+      geometry.translate(0.5, 0.5, 0.5)
+    }
+
+    geometry.computeBoundingSphere()
 
     // TODO: Better block texture for selection box so easier
     // to see block boundaries. 
     let material = new THREE.MeshBasicMaterial({
       transparent: true,
-      opacity: 0.5,
-      color: 0x880000,
+      opacity: 0.2,
+      color: this.color,
       vertexColors: THREE.FaceColors, // allow us to recolor sides
       // depthTest: false,
     })
@@ -54,12 +69,12 @@ class SelectionBox {
 
     let mesh = new THREE.Mesh(geometry, material)
     mesh.renderOrder = 8;
-    mesh.name = "selection"
+    mesh.name = this.id
     let wireframeMesh = new THREE.Mesh(geometry, wireframeMaterial)
     wireframeMesh.renderOrder = 9;
 
-    let cp = getCenterPoint(mesh)
-    console.log('Center point', cp)
+    // let cp = getCenterPoint(mesh)
+    // console.log('Center point', cp)
 
     global.scene.add(mesh)
     global.scene.add(wireframeMesh)
@@ -77,8 +92,10 @@ class SelectionBox {
     // }
   }
 
-  fromPoints(point1, point2) {
-    this.addSelectionBox(point1.floor(), point2.floor());
+  fromPoints(point1, point2, noTrans) {
+    this.point1 = point1
+    this.point2 = point2
+    this.addSelectionBox(point1.floor(), point2.floor(), noTrans);
     let aabb = getAABB(point1, point2);
     let center = aabb.getCenter()//.floor();
     // pointC = center.clone()//.floor()
@@ -128,8 +145,22 @@ class SelectionBox {
     return updatedColors
   }
 
+  recolorFaces() {
+    for (var face of this.selectionMesh.geometry.faces) {
+      face.color.setHex(this.color) //reset the default color
+    }
+
+    this.selectionMesh.geometry.colorsNeedUpdate = true
+  }
+
   getActiveFace() {
     return this.activeFace
+  }
+
+  // @return Box3
+  getBoundingBox() {
+    return new THREE.Box3().setFromObject(this.selectionMesh)
+    // return this.selectionMesh.geometry.boundingBox
   }
 
   expandActiveFace(factor) {
@@ -161,12 +192,19 @@ class SelectionBox {
 
   // Box is red
   markUnconfirmed() {
-
+    this.color = this.unconfirmedColor
+    this.recolorFaces()
   }
 
   // Box is green
   markConfirmed() {
+    this.color = this.confirmedColor
+    this.recolorFaces()
+  }
 
+  move(x, y, z) {
+    this.selectionMesh.position.set(x, y, z)
+    this.wireframeMesh.position.set(x, y, z)
   }
 }
 

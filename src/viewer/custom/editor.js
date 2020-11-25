@@ -17,7 +17,7 @@ class Editor3D extends Viewer3D {
 
   startSelection() {
     console.log('[edit] started selection')
-    this.selection = new Selection()
+    this.selection = new Selection(this.provider)
   }
 
   onStarted() {
@@ -50,9 +50,10 @@ class Editor3D extends Viewer3D {
     let children = Object.values(global.world.sectionMeshs)
 
     if (this.selection) {
-      let mesh = this.selection.getSelectionMesh()
-      if (mesh) {
-        children.push(mesh)
+      let mesh = this.selection.getSelectionMeshes()
+      if (mesh.length) {
+        // console.log('ADDED mesh',mesh)
+        children.push(...mesh)
       }
 
       // Highlight on expansion mesh
@@ -79,7 +80,10 @@ class Editor3D extends Viewer3D {
 
     // if we are currently in a selection, run logic in
     // selection.js
-    this.selection?.handleRaycast(intersects)
+    if (this.selection?.handleRaycast(intersects)) {
+      event.stopPropagation()
+      return
+    }
 
     // console.log('Intersects', intersects);
     for (let i = 0; i < intersects.length; i++) {
@@ -142,10 +146,16 @@ class Editor3D extends Viewer3D {
     this.selection?.handlePointerUp()
   }
 
+  onKeyDown = (e) => {
+    console.log('keydown', e)
+    this.selection?.handleKey(e.code)
+  }
+
   registerHandlers() {
     window.addEventListener('click', this.onClick, false)
     window.addEventListener('pointerdown', this.onPointerDown, false);
     window.addEventListener('pointerup', this.onPointerUp, false);
+    window.addEventListener('keydown', this.onKeyDown, false);
 
     super.registerHandlers()
   }
@@ -154,6 +164,7 @@ class Editor3D extends Viewer3D {
     window.removeEventListener('click', this.onClick)
     window.removeEventListener('pointerdown', this.onPointerDown)
     window.removeEventListener('pointerup', this.onPointerUp)
+    window.removeEventListener('keydown', this.onKeyDown)
     super.unregisterHandlers()
   }
 }

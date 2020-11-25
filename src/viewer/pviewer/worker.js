@@ -5,6 +5,7 @@ const { World } = require('./world')
 const { getSectionGeometry } = require('./models')
 // https://github.com/electron/electron/issues/2288#issuecomment-123147993
 const isElectron = globalThis.process && globalThis.process.type
+const { BlockContainer } = require('./blockcontainer')
 
 function getJSON (url, callback) {
   const xhr = new XMLHttpRequest()
@@ -65,7 +66,16 @@ self.onmessage = ({ data }) => {
   } else if (data.type === 'blockUpdate') {
     const loc = new Vec3(data.pos.x, data.pos.y, data.pos.z).floored()
     world.setBlockStateId(loc, data.stateId)
+  } else if (data.type == 'computeGeometry') {
+    specialGeometryRequest(data.container)
   }
+}
+
+function specialGeometryRequest (json) {
+  let world = BlockContainer.fromJson(json)
+  const geometry = getSectionGeometry(0, 0, 0, world, blocksStates, world.h, world.w, world.l, true)
+  const transferable = [geometry.positions.buffer, geometry.normals.buffer, geometry.colors.buffer, geometry.uvs.buffer]
+  postMessage({ type: 'specialGeometry', geometry }, transferable)
 }
 
 setInterval(() => {

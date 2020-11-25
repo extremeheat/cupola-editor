@@ -1,7 +1,8 @@
 class ViwerProvider {
 
-  constructor(center, viewDistance) {
+  constructor(version, center, viewDistance) {
     this.viewer = false;
+    this.version = version
     this.center = center;
     this.viewDistance = viewDistance;
     this.atlas = null;

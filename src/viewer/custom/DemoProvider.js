@@ -26,21 +26,30 @@ function defaultGenerator(x, y, z) {
   return 1
 }
 
+function chunkKey(cx, cz) {
+  return cx + ',' + cz
+}
+
 class DemoViewerProvider extends ViwerProvider {
   constructor(version, generator = defaultGenerator, center = new Vec3(0, 0, 0), viewDistance = 1) {
-    super(center, viewDistance)
-    this.version = version;
+    super(version, center, viewDistance)
     this.generator = generator;
 
     this.World = require('prismarine-world')(version);
     this.Chunk = require('prismarine-chunk')(version);
+
+    this.world = new this.World(this.getChunk.bind(this))
+
+    this.chunks = []
   }
 
   async prepare(version) {
     return await prepare(version)
   }
 
-  async getChunk(chunkX, chunkZ) {
+  getChunk(chunkX, chunkZ) {
+    let key = chunkKey
+    if (this.chunks[key]) return this.chunks[key]
     const chunk = new this.Chunk()
     for (let y = 0; y < 256; y++) {
       for (let x = 0; x < 16; x++) {
@@ -49,7 +58,14 @@ class DemoViewerProvider extends ViwerProvider {
         }
       }
     }
+    this.chunks[key] = chunk;
     return chunk;
+  }
+
+  getBlock(x, y, z) {
+    let [cx, cz] = [x >> 4, z >> 4]
+    let cc = this.getChunk(cx, cz)
+    return cc.getBlock(new Vec3(x, y, z))
   }
 }
 

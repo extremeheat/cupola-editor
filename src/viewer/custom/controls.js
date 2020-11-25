@@ -418,9 +418,9 @@ class CustomControls {
         this.dollyEnd.set(event.clientX, event.clientY);
         this.dollyDelta.subVectors(this.dollyEnd, this.dollyStart);
 
-        if (dollyDelta.y > 0) {
+        if (this.dollyDelta.y > 0) {
             this.dollyOut(this.getZoomScale());
-        } else if (dollyDelta.y < 0) {
+        } else if (this.dollyDelta.y < 0) {
             this.dollyIn(this.getZoomScale());
         }
         this.dollyStart.copy(this.dollyEnd);

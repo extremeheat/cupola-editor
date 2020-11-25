@@ -20,8 +20,7 @@ async function prepare(version) {
 class DemoWorldViewerProvider extends ViwerProvider {
   constructor(version, viewDistance = 12) {
     let center = new Vec3(0, 0, 0)
-    super(center, viewDistance)
-    this.version = version;
+    super(version, center, viewDistance)
     // this.generator = generator;
 
     this.World = require('prismarine-world')(version);

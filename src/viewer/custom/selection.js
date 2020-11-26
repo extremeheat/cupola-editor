@@ -9,9 +9,9 @@ class Selection {
     // when making our initial selection:
     this.overlay = new SelectionBox('selection')
     // when copy/cut our selection to dest:
-    this.superlay = new SelectionBox('drag-selection')
-    this.superlay.color = 0x1010FF
-    this.activeFace = null
+    this.superlays = []
+    this.superlayId = 'selection-box'
+    this.activeSuperlay = -1
     this.selectedVerticies = []
     this.opStack = []
     this.startedDragging = false
@@ -22,13 +22,13 @@ class Selection {
     this.mesh = []
 
     // TODO: convert this to typescript enum
-    // enum State { Selecting, Selected }
+    // enum State { Busy, Selecting, Selected, Dragging, Precut, Precopy }
     this.state = 'selecting'
   }
 
   reset() {
     this.startedSelection = false
-    this.activeFace = null
+    this.activeSuperlay = -1
     this.startedDragging = false
     this.vertsBeforeDragging = null
     this.draggingHistory = []
@@ -45,7 +45,7 @@ class Selection {
   getSelectionMeshes() {
     let out = []
     if (this.overlay.selectionMesh) out.push(this.overlay.selectionMesh)
-    if (this.superlay.selectionMesh) out.push(this.superlay.selectionMesh)
+    for (var superlay of this.superlays) out.push(superlay.selectionMesh)
     return out
   }
 
@@ -86,29 +86,29 @@ class Selection {
         // console.log('Intersections ', intersects)
         for (var intersect of intersects) {
           let id = intersect.object.name
-          if (id == this.superlay.id || id == this.overlay.id) {
+          if (id == this.superlayId || id == this.overlay.id) {
             continue
           }
 
           let vec3 = intersect.point
-          this.superlay.move(Math.floor(vec3.x), Math.floor(vec3.y), Math.floor(vec3.z))
-          this.mesh?.position.set(Math.floor(vec3.x), Math.floor(vec3.y), Math.floor(vec3.z))
+          this.superlays[this.activeSuperlay]?.move(Math.floor(vec3.x), Math.floor(vec3.y), Math.floor(vec3.z))
           break
         }
         return true
       } else {
         let hit = false
         for (var intersect of intersects) {
-          // console.log(intersect.object, this.superlay.id)
-          if (intersect.object.name == this.superlay.id) {
-            // console.log('HIT!!')
-            let n = intersect.face.normal
-            this.superlay.activeFace = n
+          // console.log(intersect.object)
+          if (intersect.object.name == this.superlayId) {
+            // console.log('HIT!!', intersect.object)
+            // let n = intersect.face.normal
+            this.activeSuperlay = intersect.object.data
+            // this.superlay.activeFace = n
             hit = true
           }
         }
         // console.log('Marking?')
-        if (!hit) this.superlay.activeFace = null
+        if (!hit) this.activeSuperlay = -1
         // else console.log('marked active face!')
       }
     }
@@ -123,15 +123,20 @@ class Selection {
         // console.warn('Start draggig', this.vertsBeforeDragging)
       }
     } else if (this.state == 'dragging') {
-      if (this.superlay.activeFace) {
+      if (this.activeSuperlay != -1) {
         this.startedDragging = true
       }
+      // for (var superlay of this.superlays) {
+      //   if (superlay.activeFace) {
+      //     this.startedDragging = true
+      //   }
+      // }
     }
   }
 
   handlePointerUp() {
     if (this.startedDragging) {
-      // console.warn('End draggig')
+      console.warn('End draggig')
       this.startedDragging = false
       this.vertsBeforeDragging = null
     }
@@ -180,7 +185,7 @@ class Selection {
       }
     }
 
-    if (this.state == 'precopy' || this.state == 'precut') {
+    if (this.state == 'precopy' || this.state == 'precut' || this.state == 'dragging') {
       if (code == 'KeyV' && global.controls.keyDowns.includes('ControlLeft')) {
         console.log('ctrl+v!!')
         this.paste()
@@ -246,7 +251,7 @@ class Selection {
 
   // The staged selection is pulled from the world
   async pull() {
-    console.assert(['selected', 'precopy', 'precut'].includes(this.state), 'selection not yet committed')
+    // console.assert(['selected', 'precopy', 'precut'].includes(this.state), 'selection not yet committed')
     // viewer.selection.overlay.selectionMesh.geometry.boundingBox
     let bb = this.overlay.getBoundingBox()
     if (!bb) {
@@ -293,25 +298,30 @@ class Selection {
   // Start copying the selection, make a clone of the existing one
   // by calling pull(), then this new selection can be transformed
   async copy() {
-    this.state = 'precopy'
-    this.overlay.color = 0xFFFFFF
+    this.state = 'busy'
+    this.overlay.color = 0x00FFFF
     this.overlay.recolorFaces()
+    this.overlay.recolor(0x00FFFF)
     setSuggestedActions([{ title: 'Paste [Ctrl-V]' }])
 
     this.container = await this.pull()
-    this.mesh = await this.generateMesh(this.container)
+    let mesh = await this.generateMesh(this.container)
+    this.lastMesh = mesh
+    this.state = 'precopy'
   }
 
   // Cutting the selection clones the selection using pull() then
   // gets ready clears the area inside the selection
   async cut() {
-    this.state = 'precut'
+    this.state = 'busy'
     this.overlay.color = 0xFFFFFF
     this.overlay.recolorFaces()
     setSuggestedActions([{ title: 'Paste [Ctrl-V]' }])
 
     this.container = await this.pull()
-    this.mesh = await this.generateMesh(this.container)
+    let mesh = await this.generateMesh(this.container)
+    this.lastMesh = mesh
+    this.state = 'precut'
   }
 
   // Actually executes the copy/cut operation
@@ -320,17 +330,21 @@ class Selection {
       console.log('pasting')
     } else if (this.state == 'precut') {
       console.log('cutting')
-    } else {
-      console.warn('not cutting/copying')
+    } else if (this.state != 'dragging') { // hack to allow multi-paste
+      console.warn('not cutting/copying -> currently ', this.state)
       return;
     }
 
+    let box = new SelectionBox(this.superlayId)
+    box.color = 0x1010FF
+    box.addSibling(this.lastMesh.clone())
+
     this.state = 'dragging'
-    this.superlay.fromPoints(this.overlay.point1, this.overlay.point2, true)
+    box.fromPoints(this.overlay.point1, this.overlay.point2, true, this.superlays.length)
     // copy bounding offset to selected terrain mesh
-    let offset = this.superlay.selectionMesh.geometry.boundingSphere.center
-    this.mesh.geometry.translate(offset.x, offset.y, offset.z)
-    global.scene.add(this.mesh)
+    box.showSiblings(true)
+
+    this.superlays.push(box)
   }
 }
 

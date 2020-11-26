@@ -8,7 +8,7 @@ class SelectionBox {
     this.activeFace = null
 
     // Used for expanding selection box
-    this.expandMeshes = []
+    this.siblingMeshes = []
 
     this.unconfirmedColor = 0x880000
     this.confirmedColor = 0x008800
@@ -22,7 +22,7 @@ class SelectionBox {
     if (this.wireframeMesh)
       global.scene.remove(this.wireframeMesh)
 
-    for (var _mesh of this.expandMeshes) {
+    for (var _mesh of this.siblingMeshes) {
       global.scene.remove(_mesh)
     }
   }
@@ -38,7 +38,7 @@ class SelectionBox {
 
     let geometry = new THREE.BoxGeometry(width + 0.01, height + 0.01, length + 0.01)
     if (noTrans) {
-      geometry.translate(width % 2 == 0 ? 0 : 0.5, 
+      geometry.translate(width % 2 == 0 ? 0 : 0.5,
         height % 2 == 0 ? 0 : 0.5, length % 2 == 0 ? 0 : 0.5)
       // console.log('HWL Translated', width % 2 == 0 ? 0 : 0.5, height % 2 == 0 ? 0 : 0.5,
       //   length % 2 == 0 ? 0 : 0.5)
@@ -92,7 +92,23 @@ class SelectionBox {
     // }
   }
 
-  fromPoints(point1, point2, noTrans) {
+  addSibling(mesh) {
+    this.siblingMeshes.push(mesh)
+  }
+
+  showSiblings(align = true) {
+    for (var mesh of this.siblingMeshes) {
+      if (align) {
+        mesh.geometry.center() // remove geometry offset
+        let offset = this.selectionMesh.geometry.boundingSphere.center
+        mesh.geometry.translate(offset.x, offset.y, offset.z)
+        console.warn('translated', mesh, offset)
+      }
+      global.scene.add(mesh)
+    }
+  }
+
+  fromPoints(point1, point2, noTrans, data) {
     this.point1 = point1
     this.point2 = point2
     this.addSelectionBox(point1.floor(), point2.floor(), noTrans);
@@ -100,12 +116,13 @@ class SelectionBox {
     let center = aabb.getCenter()//.floor();
     // pointC = center.clone()//.floor()
     // console.log('Center',point1,point2,center)
+    this.selectionMesh.data = data
     this.selectionMesh.position.copy(center)
     this.wireframeMesh.position.copy(center)
-    for (var mesh of this.expandMeshes) {
-      // mesh.position.copy(center);
-      mesh.geometry.translate(center.x, center.y, center.z);
-    }
+    // for (var mesh of this.siblingMeshes) {
+    //   // mesh.position.copy(center);
+    //   mesh.geometry.translate(center.x, center.y, center.z);
+    // }
     return center.clone()
   }
 
@@ -153,6 +170,10 @@ class SelectionBox {
     this.selectionMesh.geometry.colorsNeedUpdate = true
   }
 
+  recolor(color) {
+    this.selectionMesh.material.color.setHex(color)
+  }
+
   getActiveFace() {
     return this.activeFace
   }
@@ -174,7 +195,7 @@ class SelectionBox {
     let g = this.selectionMesh.geometry
     // console.log('EXPAND', mod, JSON.stringify(g.vertices))
 
-    expandGeometry(g, this.activeFace, mod)
+    [this.point1, this.point2] = expandGeometry(g, this.activeFace, mod)
     // console.log('EXPANDed', JSON.stringify(g.vertices))
   }
 
@@ -205,6 +226,7 @@ class SelectionBox {
   move(x, y, z) {
     this.selectionMesh.position.set(x, y, z)
     this.wireframeMesh.position.set(x, y, z)
+    for (var mesh of this.siblingMeshes) mesh.position.set(x, y, z)
   }
 }
 
@@ -303,6 +325,8 @@ function expandGeometry(geometry, face, mod) {
   geometry.verticesNeedUpdate = true
   geometry.computeBoundingBox()
   geometry.computeBoundingSphere()
+
+  return [new THREE.Vector3(xmin, ymin, zmin), new THREE.Vector3(xmax, ymax, zmax)]
 }
 
 // HOVER HIGHLIGHT

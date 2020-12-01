@@ -10,6 +10,9 @@ class ViwerProvider {
 
     this.lastCameraPos = center.offset(0, 60, 0);
     this.loadedChunks = [];
+    this.dirtyChunks = new Set()
+    this.dirtyBlocks = 0
+    this.chunkResendTimer = null
   }
 
   async init(viewer) {
@@ -78,6 +81,40 @@ class ViwerProvider {
   update(cameraPosition) {
     // TODO: Render in more parts of world based on viewDistance
     this.lastCameraPos = cameraPosition;
+  }
+
+  sendDirtyChunks() {
+    this.dirtyBlocks = 0
+
+    console.log('[provider] sending dirty chunks', this.dirtyChunks)
+
+    this.dirtyChunks.forEach(async k => {
+      let [ cx, cz ] = k.split(',')
+      const chunk = await this.getChunk(cx, cz)
+      this.viewer.addColumn(cx, cz, chunk)
+    })
+    this.dirtyChunks.clear()
+  }
+
+  getBlock(x, y, z) { }
+
+  setBlock(x, y, z, block) {
+    this.dirtyBlocks++
+
+    this.dirtyChunks.add(`${x >> 4},${z >> 4}`)
+
+    // maximum dirty blocks we can have before we decide to resend whole
+    // chunk to pviewer
+    const MAX_DIRTY = 1
+
+    clearTimeout(this.chunkResendTimer)
+    this.chunkResendTimer = setTimeout(() => {
+      if (this.dirtyBlocks > MAX_DIRTY) {
+        this.sendDirtyChunks()
+      } else {
+        // TODO
+      }
+    }, 40)
   }
 }
 

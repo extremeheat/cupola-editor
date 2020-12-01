@@ -100,8 +100,8 @@ class Viewer3D {
     console.log('addColumn', x, z, chunk)
   }
 
-  showColumn() {
-    return this.addColumn(arguments);
+  showColumn(x, z, col) {
+    return this.addColumn(x, z, col);
   }
 
   // Check if we can unload any chunks

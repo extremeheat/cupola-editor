@@ -17,21 +17,63 @@ class Selection {
     this.startedDragging = false
     this.vertsBeforeDragging = null
     this.draggingHistory = []
+    this.container = null
+    this.lastMesh = null
 
     // TODO: Move this to overlays & allow pasting multiple times
     this.mesh = []
 
     // TODO: convert this to typescript enum
     // enum State { Busy, Selecting, Selected, Dragging, Precut, Precopy }
+    this.stateStack = []
     this.state = 'selecting'
+    this.stateData = {
+      copying: false,
+      cutting: false,
+      stage: null,
+      premod: false,
+      busy: false,
+    }
   }
 
   reset() {
+    this.state = 'selecting'
+    this.stateData = {
+      copying: false,
+      cutting: false,
+      stage: null,
+      premod: false,
+      busy: false,
+    }
     this.startedSelection = false
     this.activeSuperlay = -1
     this.startedDragging = false
     this.vertsBeforeDragging = null
     this.draggingHistory = []
+    this.selectedVerticies = []
+    this.container = null
+    this.lastMesh = null
+
+    this.overlay.clear()
+    this.overlay = new SelectionBox('selection')
+    this.superlays.forEach(e => e.clear())
+    this.superlays = []
+    setSuggestedActions([{ title: 'Create selection [Ctrl-Click]' }])
+  }
+
+  setState(state, modes) {
+    this.stateStack.push({ ...this.stateData })
+    this.state = state
+    if (modes) {
+      this.stateData = modes
+    }
+    // for (var key in modes) {
+    //   this.stateData[key] = modes[key]
+    // }
+  }
+
+  isCopyOrCutting() {
+    return this.stateData.copying || this.stateData.cutting
   }
 
   backward() {
@@ -81,7 +123,7 @@ class Selection {
         // console.warn('Erased activeFace')
         this.overlay.emptyActiveFace()
       }
-    } else if (this.state == 'dragging') {
+    } else if (this.isCopyOrCutting()) {
       if (this.startedDragging) {
         // console.log('Intersections ', intersects)
         for (var intersect of intersects) {
@@ -122,7 +164,7 @@ class Selection {
         this.vertsBeforeDragging = cloneVector3a(this.overlay.getSelectionVerts())
         // console.warn('Start draggig', this.vertsBeforeDragging)
       }
-    } else if (this.state == 'dragging') {
+    } else if (this.isCopyOrCutting()) {
       if (this.activeSuperlay != -1) {
         this.startedDragging = true
       }
@@ -168,9 +210,12 @@ class Selection {
   }
 
   handleKey(code) {
-    if (this.state == 'selecting') {
-      if (code == 'Enter') {
+
+    if (code == 'Enter') {
+      if (this.state == 'selecting') {
         this.stage()
+      } else if (this.state == 'operation' && this.stateData.stage == 'post') {
+        this.commit()
       }
     }
 
@@ -185,7 +230,7 @@ class Selection {
       }
     }
 
-    if (this.state == 'precopy' || this.state == 'precut' || this.state == 'dragging') {
+    if (this.isCopyOrCutting()) {
       if (code == 'KeyV' && global.controls.keyDowns.includes('ControlLeft')) {
         console.log('ctrl+v!!')
         this.paste()
@@ -241,7 +286,7 @@ class Selection {
   // Box changes from red to green so the user knows they
   // can no longer resize or add points to this selection
   stage() {
-    if (this.state == 'selecting') {
+    if (this.state == 'selecting' && this.overlay) {
       this.state = 'selected'
       this.overlay.markConfirmed()
 
@@ -271,7 +316,7 @@ class Selection {
         }
       }
     }
-    container.setOffset(0,0,0)
+    // container.setOffset(0,0,0)
     // console.log('[selection] container', container)
     global.lastContainer = container
     return container
@@ -292,13 +337,52 @@ class Selection {
 
   // The staged selection is written to the world
   commit() {
+    if (!this.isCopyOrCutting()) {
+      console.warn("[selection] can't commit because not copy/cutting")
+      return
+    }
 
+    if (this.stateData.stage != 'post') {
+      console.warn("[selection] can't commit until paste")
+    }
+    console.assert(this.container, 'missing container!')
+    console.log('[select] commiting!')
+
+    const c = this.container
+
+    if (this.stateData.cutting) {
+      for (var x = c.minX; x < c.minX + c.w; x++) {
+        for (var y = c.minY; y < c.minY + c.h; y++) {
+          for (var z = c.minZ; z < c.minZ + c.l; z++) {
+            this.provider.setBlockStateId(x, y, z, 0)
+            // console.log('setBlock0', x, y, z, 0)
+          }
+        }
+      }
+    }
+
+    for (var superlay of this.superlays) {
+      // let min = superlay.point1
+      // let max = superlay.point2
+      let [min, max] = superlay.getRoundedBoundingBox()
+
+      for (var x = min.x, X = c.minX; x <= max.x; x++, X++) {
+        for (var y = min.y, Y = c.minY; y <= max.y; y++, Y++) {
+          for (var z = min.z, Z = c.minZ; z <= max.z; z++, Z++) {
+            this.provider.setBlock(x, y, z, c.getBlock({ x: X, y: Y, z: Z }))
+            // console.log('setBlock1', x, y, z, X, Y, Z, c.getBlock({ x: X, y: Y, z: Z }))
+          }
+        }
+      }
+    }
+
+    this.reset()
   }
 
   // Start copying the selection, make a clone of the existing one
   // by calling pull(), then this new selection can be transformed
   async copy() {
-    this.state = 'busy'
+    this.setState('busy')
     this.overlay.color = 0x00FFFF
     this.overlay.recolorFaces()
     this.overlay.recolor(0x00FFFF)
@@ -307,7 +391,7 @@ class Selection {
     this.container = await this.pull()
     let mesh = await this.generateMesh(this.container)
     this.lastMesh = mesh
-    this.state = 'precopy'
+    this.setState('operation', { copying: true, stage: 'pre' })
   }
 
   // Cutting the selection clones the selection using pull() then
@@ -321,30 +405,30 @@ class Selection {
     this.container = await this.pull()
     let mesh = await this.generateMesh(this.container)
     this.lastMesh = mesh
-    this.state = 'precut'
+    this.setState('operation', { cutting: true, stage: 'pre' })
   }
 
   // Actually executes the copy/cut operation
   paste() {
-    if (this.state == 'precopy') {
-      console.log('pasting')
-    } else if (this.state == 'precut') {
-      console.log('cutting')
-    } else if (this.state != 'dragging') { // hack to allow multi-paste
+    if (!this.isCopyOrCutting()) {
       console.warn('not cutting/copying -> currently ', this.state)
-      return;
     }
+
+    this.stateData.stage = 'post'
 
     let box = new SelectionBox(this.superlayId)
     box.color = 0x1010FF
     box.addSibling(this.lastMesh.clone())
 
-    this.state = 'dragging'
-    box.fromPoints(this.overlay.point1, this.overlay.point2, true, this.superlays.length)
+    // this.state = 'dragging'
+    let [p1, p2] = this.overlay.getRoundedBoundingBox()
+    box.fromPoints(p1, p2, true, this.superlays.length)
     // copy bounding offset to selected terrain mesh
     box.showSiblings(true)
 
     this.superlays.push(box)
+
+    setSuggestedActions([{ title: 'Paste [Ctrl-V]' }, { title: 'Save changes (Enter)' }])
   }
 }
 

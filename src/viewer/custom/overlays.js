@@ -109,10 +109,10 @@ class SelectionBox {
   }
 
   fromPoints(point1, point2, noTrans, data) {
-    this.point1 = point1
-    this.point2 = point2
     this.addSelectionBox(point1.floor(), point2.floor(), noTrans);
     let aabb = getAABB(point1, point2);
+    this.point1 = aabb.min
+    this.point2 = aabb.max
     let center = aabb.getCenter()//.floor();
     // pointC = center.clone()//.floor()
     // console.log('Center',point1,point2,center)
@@ -184,6 +184,14 @@ class SelectionBox {
     // return this.selectionMesh.geometry.boundingBox
   }
 
+  getRoundedBoundingBox() {
+    let bb = this.getBoundingBox()
+    if (!bb) {
+      throw 'No active bounding box!'
+    }
+    return [bb.min.round(), bb.max.round().subScalar(1)]
+  }
+
   expandActiveFace(factor) {
     if (!this.activeFace) {
       console.warn('[overlay] no active face')
@@ -195,7 +203,7 @@ class SelectionBox {
     let g = this.selectionMesh.geometry
     // console.log('EXPAND', mod, JSON.stringify(g.vertices))
 
-    [this.point1, this.point2] = expandGeometry(g, this.activeFace, mod)
+    let ret = expandGeometry(g, this.activeFace, mod)
     // console.log('EXPANDed', JSON.stringify(g.vertices))
   }
 
@@ -224,6 +232,10 @@ class SelectionBox {
   }
 
   move(x, y, z) {
+    let cpos = new THREE.Vector3(x,y,z).sub(this.selectionMesh.position.clone().ceil())
+    // console.log('move offset ', [x,y,z], '->', this.selectionMesh.position, cpos)
+    this.point1.add(cpos)
+    this.point2.add(cpos)
     this.selectionMesh.position.set(x, y, z)
     this.wireframeMesh.position.set(x, y, z)
     for (var mesh of this.siblingMeshes) mesh.position.set(x, y, z)

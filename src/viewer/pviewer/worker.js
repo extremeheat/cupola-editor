@@ -73,7 +73,7 @@ self.onmessage = ({ data }) => {
 
 function specialGeometryRequest (json) {
   let world = BlockContainer.fromJson(json)
-  const geometry = getSectionGeometry(0, 0, 0, world, blocksStates, world.h, world.w, world.l, true)
+  const geometry = getSectionGeometry(world.minX, world.minY, world.minZ, world, blocksStates, world.h, world.w, world.l, true)
   const transferable = [geometry.positions.buffer, geometry.normals.buffer, geometry.colors.buffer, geometry.uvs.buffer]
   postMessage({ type: 'specialGeometry', geometry }, transferable)
 }

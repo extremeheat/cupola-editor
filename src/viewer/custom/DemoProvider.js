@@ -48,7 +48,7 @@ class DemoViewerProvider extends ViwerProvider {
   }
 
   getChunk(chunkX, chunkZ) {
-    let key = chunkKey
+    let key = chunkKey(chunkX, chunkZ)
     if (this.chunks[key]) return this.chunks[key]
     const chunk = new this.Chunk()
     for (let y = 0; y < 256; y++) {
@@ -66,6 +66,18 @@ class DemoViewerProvider extends ViwerProvider {
     let [cx, cz] = [x >> 4, z >> 4]
     let cc = this.getChunk(cx, cz)
     return cc.getBlock(new Vec3(x, y, z))
+  }
+
+  async setBlock(x, y, z, block) { 
+    await this.world.setBlock({ x, y, z }, block)
+
+    super.setBlock(x, y, z, block)
+  }
+
+  async setBlockStateId(x, y, z, block) { 
+    await this.world.setBlockStateId({ x, y, z }, block)
+
+    super.setBlock(x, y, z, block)
   }
 }
 

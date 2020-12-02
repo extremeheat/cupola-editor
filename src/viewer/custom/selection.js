@@ -12,6 +12,8 @@ class Selection {
     this.superlays = []
     this.superlayId = 'selection-box'
     this.activeSuperlay = -1
+    // if we cannot drag a selection right now (control held)
+    this.dragDisabled = false
     this.selectedVerticies = []
     this.opStack = []
     this.startedDragging = false
@@ -46,7 +48,9 @@ class Selection {
       busy: false,
     }
     this.startedSelection = false
-    this.activeSuperlay = -1
+    this.setActiveSuperlay(-1)
+    // if we cannot drag a selection right now (control held)
+    this.dragDisabled = false
     this.startedDragging = false
     this.vertsBeforeDragging = null
     this.draggingHistory = []
@@ -70,6 +74,32 @@ class Selection {
     // for (var key in modes) {
     //   this.stateData[key] = modes[key]
     // }
+  }
+  
+  setActiveSuperlay(id) {
+    if (id == -1) {
+      if (this.activeSuperlay != -1) {
+        let superlay = this.superlays[id]
+        global.transformControls.deattach(superlay.selectionMesh)
+      }
+      global.scene.remove(global.transformControls)
+    } else {
+      let superlay = this.superlays[id]
+      global.transformControls.attach(superlay.group)
+      global.scene.add(global.transformControls)
+    }
+    this.activeSuperlay = id
+  }
+
+  setDragDisabled(disabled) {
+    this.dragDisabled = disabled
+    if (disabled) {
+      global.controls.enableRotate = false
+      global.controls.enablePan = false
+    } else {
+      global.controls.enableRotate = true
+      global.controls.enablePan = true
+    }
   }
 
   isCopyOrCutting() {
@@ -144,8 +174,7 @@ class Selection {
           if (intersect.object.name == this.superlayId) {
             // console.log('HIT!!', intersect.object)
             // let n = intersect.face.normal
-            this.activeSuperlay = intersect.object.data
-            // this.superlay.activeFace = n
+            this.setActiveSuperlay(intersect.object.data)
             hit = true
           }
         }
@@ -165,7 +194,7 @@ class Selection {
         // console.warn('Start draggig', this.vertsBeforeDragging)
       }
     } else if (this.isCopyOrCutting()) {
-      if (this.activeSuperlay != -1) {
+      if (this.activeSuperlay != -1 && !this.dragDisabled) {
         this.startedDragging = true
       }
       // for (var superlay of this.superlays) {
@@ -235,6 +264,18 @@ class Selection {
         console.log('ctrl+v!!')
         this.paste()
       }
+
+      if (code == 'ControlLeft') {
+        this.setDragDisabled(true)
+        global.transformControls.enabled = true
+      }
+    }
+  }
+
+  handleKeyUp(code) {
+    if (code == 'ControlLeft') {
+      global.transformControls.enabled = false
+      this.setDragDisabled(false)
     }
   }
 
@@ -253,6 +294,7 @@ class Selection {
 
   // The user has started a selection with one or more points
   addPoint(vec3) {
+    if (!vec3) return
     if (this.selectedVerticies.length == 2) {
       this.selectedVerticies = []
     }
@@ -326,6 +368,7 @@ class Selection {
     return new Promise(res =>
       global.world.requestMesh(container, (mesh) => {
         console.log('[selection] pulled mesh ', mesh)
+        mesh.scale.setScalar(1.001) // slightly scale bigger to avoid tearing from overlapping mesh
         mesh.geometry.center() // remove geometry offset
         global.pulledMesh = mesh
         res(mesh)

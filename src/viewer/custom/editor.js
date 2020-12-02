@@ -151,11 +151,16 @@ class Editor3D extends Viewer3D {
     this.selection?.handleKey(e.code)
   }
 
+  onKeyUp = (e) => {
+    this.selection?.handleKeyUp(e.code)
+  }
+
   registerHandlers() {
     window.addEventListener('click', this.onClick, false)
     window.addEventListener('pointerdown', this.onPointerDown, false);
     window.addEventListener('pointerup', this.onPointerUp, false);
     window.addEventListener('keydown', this.onKeyDown, false);
+    window.addEventListener('keyup', this.onKeyUp, false);
 
     super.registerHandlers()
   }
@@ -165,6 +170,7 @@ class Editor3D extends Viewer3D {
     window.removeEventListener('pointerdown', this.onPointerDown)
     window.removeEventListener('pointerup', this.onPointerUp)
     window.removeEventListener('keydown', this.onKeyDown)
+    window.removeEventListener('keyup', this.onKeyUp)
     super.unregisterHandlers()
   }
 }

@@ -1,6 +1,7 @@
 class SelectionBox {
   constructor(id) {
     this.id = id
+    this.group = new THREE.Group()
     this.selectionMesh = null
     // Outline
     this.wireframeMesh = null
@@ -14,16 +15,18 @@ class SelectionBox {
     this.confirmedColor = 0x008800
 
     this.color = this.unconfirmedColor
+
+    global.scene.add(this.group)
   }
 
   clear() {
     if (this.selectionMesh)
-      global.scene.remove(this.selectionMesh)
+      this.group.remove(this.selectionMesh)
     if (this.wireframeMesh)
-      global.scene.remove(this.wireframeMesh)
+      this.group.remove(this.wireframeMesh)
 
     for (var _mesh of this.siblingMeshes) {
-      global.scene.remove(_mesh)
+      this.group.remove(_mesh)
     }
   }
 
@@ -76,8 +79,8 @@ class SelectionBox {
     // let cp = getCenterPoint(mesh)
     // console.log('Center point', cp)
 
-    global.scene.add(mesh)
-    global.scene.add(wireframeMesh)
+    this.group.add(mesh)
+    this.group.add(wireframeMesh)
     this.selectionMesh = mesh
     this.wireframeMesh = wireframeMesh
 
@@ -104,7 +107,7 @@ class SelectionBox {
         mesh.geometry.translate(offset.x, offset.y, offset.z)
         console.warn('translated', mesh, offset)
       }
-      global.scene.add(mesh)
+      this.group.add(mesh)
     }
   }
 
@@ -117,8 +120,7 @@ class SelectionBox {
     // pointC = center.clone()//.floor()
     // console.log('Center',point1,point2,center)
     this.selectionMesh.data = data
-    this.selectionMesh.position.copy(center)
-    this.wireframeMesh.position.copy(center)
+    this.group.position.copy(center)
     // for (var mesh of this.siblingMeshes) {
     //   // mesh.position.copy(center);
     //   mesh.geometry.translate(center.x, center.y, center.z);
@@ -232,13 +234,7 @@ class SelectionBox {
   }
 
   move(x, y, z) {
-    let cpos = new THREE.Vector3(x,y,z).sub(this.selectionMesh.position.clone().ceil())
-    // console.log('move offset ', [x,y,z], '->', this.selectionMesh.position, cpos)
-    this.point1.add(cpos)
-    this.point2.add(cpos)
-    this.selectionMesh.position.set(x, y, z)
-    this.wireframeMesh.position.set(x, y, z)
-    for (var mesh of this.siblingMeshes) mesh.position.set(x, y, z)
+    this.group.position.set(x,y,z)
   }
 }
 

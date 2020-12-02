@@ -1,6 +1,7 @@
 /* global THREE */
 global.THREE = require('three')
 require('three/examples/js/controls/OrbitControls')
+require('three/examples/js/controls/TransformControls')
 const { WorldRenderer } = require('./worldrenderer')
 const { Entities } = require('./entities')
 const { Primitives } = require('./primitives')
@@ -14,7 +15,7 @@ function initialize(options = {}) {
     controls: THREE.OrbitControls,
     onAnimate: null
   }
-  options = {...defaultOpts, ...options}
+  options = { ...defaultOpts, ...options }
 
   console.log('[viewer] init')
   createScene()
@@ -61,6 +62,10 @@ function startRenderer(controlClass, onAnimate) {
 
   let controls = new controlClass(camera, renderer.domElement)
   global.controls = controls
+
+  const transformControls = new THREE.TransformControls(camera, renderer.domElement)
+  transformControls.translationSnap = 1 // snapping to world
+  global.transformControls = transformControls
 
   function animate() {
     window.requestAnimationFrame(animate)

@@ -31,7 +31,7 @@ function chunkKey(cx, cz) {
 }
 
 class DemoViewerProvider extends ViwerProvider {
-  constructor(version, generator = defaultGenerator, center = new Vec3(0, 0, 0), viewDistance = 1) {
+  constructor(version, generator = defaultGenerator, center = new Vec3(0, 0, 0), viewDistance = 4) {
     super(version, center, viewDistance)
     this.generator = generator;
 

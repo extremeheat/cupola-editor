@@ -187,7 +187,9 @@ class Selection {
 
   handlePointerDown() {
     // console.warn('Pointr down')
-    if (this.state == 'selecting') {
+    // TODO: instead of this.selectedVerticies.length == 2, add utility function to check if
+    // a complete selection has been made
+    if (this.state == 'selecting' && this.selectedVerticies.length == 2) {
       if (this.overlay.activeFace && !this.startedDragging) {
         this.startedDragging = true
         this.vertsBeforeDragging = cloneVector3a(this.overlay.getSelectionVerts())
@@ -287,7 +289,7 @@ class Selection {
           this.overlay.fromPoints(this.selectedVerticies[0], position)
         }, 50);
       } else if (this.selectedVerticies.length == 2) {
-        setSuggestedActions([{ title: 'Confirm selection (Enter)' }])
+        setSuggestedActions([{ title: 'Drag face to expand' }, { title: 'Confirm selection (Enter)' }])
       }
     }
   }
@@ -295,11 +297,13 @@ class Selection {
   // The user has started a selection with one or more points
   addPoint(vec3) {
     if (!vec3) return
-    if (this.selectedVerticies.length == 2) {
-      this.selectedVerticies = []
+    if (this.state == 'selecting') {
+      if (this.selectedVerticies.length == 2) {
+        this.selectedVerticies = []
+      }
+      console.log('Add poin', vec3)
+      this.selectedVerticies.push(vec3)
     }
-    console.log('Add poin', vec3)
-    this.selectedVerticies.push(vec3)
     // this.opStack.push([ 'AddPoint' ])
   }
 
@@ -328,7 +332,7 @@ class Selection {
   // Box changes from red to green so the user knows they
   // can no longer resize or add points to this selection
   stage() {
-    if (this.state == 'selecting' && this.overlay) {
+    if (this.state == 'selecting' && (this.selectedVerticies.length == 2)) {
       this.state = 'selected'
       this.overlay.markConfirmed()
 

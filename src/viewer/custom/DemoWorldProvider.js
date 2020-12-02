@@ -18,7 +18,7 @@ async function prepare(version) {
 }
 
 class DemoWorldViewerProvider extends ViwerProvider {
-  constructor(version, viewDistance = 12) {
+  constructor(version, viewDistance = 4) {
     let center = new Vec3(0, 0, 0)
     super(version, center, viewDistance)
     // this.generator = generator;
@@ -40,8 +40,26 @@ class DemoWorldViewerProvider extends ViwerProvider {
 
   async getChunk(chunkX, chunkZ) {
     let cc = await this.world.getColumn(chunkX, chunkZ)
-    console.log('cc', cc)
+    // console.log('cc', cc)
     return cc 
+  }
+
+  getBlock(x, y, z) {
+    let [cx, cz] = [x >> 4, z >> 4]
+    let cc = this.getChunk(cx, cz)
+    return cc.getBlock(new Vec3(x, y, z))
+  }
+
+  async setBlock(x, y, z, block) { 
+    await this.world.setBlock({ x, y, z }, block)
+
+    super.setBlock(x, y, z, block)
+  }
+
+  async setBlockStateId(x, y, z, block) { 
+    await this.world.setBlockStateId({ x, y, z }, block)
+
+    super.setBlock(x, y, z, block)
   }
 }
 

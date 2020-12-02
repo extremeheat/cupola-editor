@@ -20,6 +20,11 @@ class Editor3D extends Viewer3D {
     this.selection = new Selection(this.provider)
   }
 
+  endSelection() {
+    this.selection.reset()
+    this.selection = null
+  }
+
   onStarted() {
     super.onStarted()
     this.highlightMesh = addBlockHighlight()

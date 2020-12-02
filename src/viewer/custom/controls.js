@@ -163,7 +163,7 @@ class CustomControls {
 
         // MCEditor - tick controls if called from render loop
         if (!force) {
-            if ((this.ticks++ % 4) == 0) {
+            if ((this.ticks++ % 2) == 0) {
                 this.tickContols()
             }
         }

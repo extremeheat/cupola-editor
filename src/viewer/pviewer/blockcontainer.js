@@ -47,15 +47,18 @@ class BlockContainer {
   static fromJson(string) {
     let p = JSON.parse(string)
 
-    let blocks = new Uint16Array(atob(p.blocks).split("").map(
+
+    let blocks = new Uint8Array(atob(p.blocks).split("").map(
       (char) => char.charCodeAt(0)
     ));
 
-    return new BlockContainer(p.version, p.h, p.w, p.l, p.minX, p.minY, p.minZ, blocks)
+
+    return new BlockContainer(p.version, p.h, p.w, p.l, p.minX, p.minY, p.minZ, new Uint16Array(blocks.buffer))
   }
 
   toJson() {
-    let base64 = btoa(String.fromCharCode.apply(null, this.blocks));
+    let blocks = new Uint8Array(this.blocks.buffer)
+    let base64 = btoa(String.fromCharCode.apply(null, blocks));
 
     let { version, h, w, l, minX, minY, minZ } = this
 

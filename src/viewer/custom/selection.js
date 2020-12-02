@@ -79,8 +79,8 @@ class Selection {
   setActiveSuperlay(id) {
     if (id == -1) {
       if (this.activeSuperlay != -1) {
-        let superlay = this.superlays[id]
-        global.transformControls.deattach(superlay.selectionMesh)
+        let superlay = this.superlays[this.activeSuperlay]
+        global.transformControls.detach(superlay.selectionMesh)
       }
       global.scene.remove(global.transformControls)
     } else {
@@ -471,7 +471,7 @@ class Selection {
 
     this.superlays.push(box)
 
-    setSuggestedActions([{ title: 'Paste [Ctrl-V]' }, { title: 'Save changes (Enter)' }])
+    setSuggestedActions([{ title: 'Paste [Ctrl-V]' }, { title: 'Translate [Ctrl]' }, { title: 'Save changes (Enter)' }])
   }
 }
 

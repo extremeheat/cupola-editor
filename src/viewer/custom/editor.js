@@ -139,7 +139,7 @@ class Editor3D extends Viewer3D {
     this.onControlUpdate(event)
   }
 
-  onCursorControlClick(vec3) {
+  onCursorControlClick() {
     console.log('Got ctrl click', this.lastPos3D)
     if (!this.selection) {
       this.startSelection()
@@ -148,15 +148,12 @@ class Editor3D extends Viewer3D {
     this.selection.addPoint(this.lastPos3D)
   }
 
-  onClick = (event) => {
-    console.log('on click', global.controls.keyDowns)
-    if (global.controls.keyDowns.includes("ControlLeft")) {
-      this.onCursorControlClick(event);
-    }
-  }
-
   onPointerDown = (e) => {
-    this.selection?.handlePointerDown()
+    if (e.ctrlKey) {
+      this.onCursorControlClick();
+    } else {
+      this.selection?.handlePointerDown()
+    }
   }
 
   onPointerUp = (e) => {
@@ -173,7 +170,6 @@ class Editor3D extends Viewer3D {
   }
 
   registerHandlers() {
-    window.addEventListener('click', this.onClick, false)
     window.addEventListener('pointerdown', this.onPointerDown, false);
     window.addEventListener('pointerup', this.onPointerUp, false);
     window.addEventListener('keydown', this.onKeyDown, false);
@@ -183,7 +179,6 @@ class Editor3D extends Viewer3D {
   }
 
   unregisterHandlers() {
-    window.removeEventListener('click', this.onClick)
     window.removeEventListener('pointerdown', this.onPointerDown)
     window.removeEventListener('pointerup', this.onPointerUp)
     window.removeEventListener('keydown', this.onKeyDown)

@@ -1,6 +1,7 @@
 class SelectionBox {
   constructor(id) {
     this.id = id
+    this.objectId = Date.now()
     this.group = new THREE.Group()
     this.selectionMesh = null
     // Outline
@@ -16,7 +17,9 @@ class SelectionBox {
 
     this.color = this.unconfirmedColor
 
-    global.scene.add(this.group)
+    this.hasAttachedTransformControls = false
+
+    this.show()
   }
 
   clear() {
@@ -28,6 +31,14 @@ class SelectionBox {
     for (var _mesh of this.siblingMeshes) {
       this.group.remove(_mesh)
     }
+  }
+
+  hide() {
+    global.meshes.remove(this.group)
+  }
+
+  show() {
+    global.meshes.add(this.group)
   }
 
   addSelectionBox(pos1, pos2, noTrans) {
@@ -180,9 +191,12 @@ class SelectionBox {
     return this.activeFace
   }
 
-  // @return Box3
+  // Returns primary BB
   getBoundingBox() {
-    return new THREE.Box3().setFromObject(this.selectionMesh)
+    let box = new THREE.Box3()
+    if (this.selectionMesh)
+      return box.setFromObject(this.selectionMesh)
+    return box
     // return this.selectionMesh.geometry.boundingBox
   }
 
@@ -192,6 +206,14 @@ class SelectionBox {
       throw 'No active bounding box!'
     }
     return [bb.min.round(), bb.max.round().subScalar(1)]
+  }
+
+  getChunksInBB() {
+    return getChunksInBB(this.getBoundingBox())
+  }
+
+  getChunksKeysInBB() {
+    return this.getChunksInBB().map(([x, z]) => x + ',' + z)
   }
 
   expandActiveFace(factor) {
@@ -234,7 +256,7 @@ class SelectionBox {
   }
 
   move(x, y, z) {
-    this.group.position.set(x,y,z)
+    this.group.position.set(x, y, z)
   }
 }
 
@@ -335,6 +357,18 @@ function expandGeometry(geometry, face, mod) {
   geometry.computeBoundingSphere()
 
   return [new THREE.Vector3(xmin, ymin, zmin), new THREE.Vector3(xmax, ymax, zmax)]
+}
+
+function getChunksInBB(box) {
+  let ret = []
+
+  for (var x = box.min.x; x < box.max.x + 16; x += 16) {
+    for (var z = box.min.z; z < box.max.z + 16; z += 16) {
+      ret.push([x >> 4, z >> 4])
+    }
+  }
+
+  return ret
 }
 
 // HOVER HIGHLIGHT

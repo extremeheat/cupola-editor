@@ -34,7 +34,7 @@ class DemoWorldViewerProvider extends ViwerProvider {
 
   onStarted() {
     const demo_path = fs.readFileSync(__dirname + '/_demo_world_path.txt', 'utf8')
-    this.world = new this.World(null, new this.Anvil(demo_path))
+    this.world = new this.World(null, new this.Anvil(demo_path), 0 /* no saving */)
     super.onStarted()
   }
 
@@ -42,6 +42,11 @@ class DemoWorldViewerProvider extends ViwerProvider {
     let cc = await this.world.getColumn(chunkX, chunkZ)
     // console.log('cc', cc)
     return cc 
+  }
+
+  async tick() {
+    this.saveChunks()
+    super.tick()
   }
 
   getBlock(x, y, z) {

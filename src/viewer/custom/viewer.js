@@ -37,7 +37,7 @@ class Viewer3D {
     // over socket so we don't need to postMessage
     if (versionData) {
       const { version, atlas, blockstates } = versionData
-      window.postMessage({ type: 'initialize', version, blockstates, atlasURI: atlas, skipAO: false, noEmptyNeighborCulling: true })
+      window.postMessage({ type: 'initialize', version, blockstates, atlasURI: atlas, skipAO: false, noEmptyNeighborCulling: false })
     }
 
     // allow some time for page load...
@@ -50,6 +50,9 @@ class Viewer3D {
   onStarted() {
     this.provider.onStarted()
     this.registerHandlers()
+
+    global.meshes = new THREE.Group()
+    global.scene.add(global.meshes)
   }
 
   setCameraPosition(vec3) {
@@ -57,67 +60,37 @@ class Viewer3D {
   }
 
   // 
-  markModifiedColumn(column) {
-    column.dirty = true;
+  unloadChunk(cx, cz) {
+    window.postMessage({ type: 'unloadChunk', x: cx * 16, z: cz * 16 })
+    return true
   }
 
-  tryUnloadChunk(x, z) {
-    let cached = this.getCachedChunk(x, z)
-    let key = `${x},${z}`
-    if (!cached && this.isChunkLoaded(key)) {
-      let [bx, bz] = [x * 16, z * 16]
-      window.postMessage({ type: 'unloadChunk', x: bx, z: bz })
-      return true
-    } else if (cached.dirty) {
-      if (!this.chunkUnloadQueue.includes([x, z])) {
-        this.chunkUnloadQueue.push([x, z])
-      }
-    }
-    return false
-  }
-
-  unloadChunks() {
-    let unloaded = []
-    for (var [x, z] of this.chunkUnloadQueue) {
-      if (this.tryUnloadChunk(x, z)) unloaded.push([x, z])
-    }
-    this.chunkUnloadQueue.filter(e => !unloaded.includes(e))
-  }
-
-  // Gets (cached) chunk if we modified it
-  getCachedChunk(x, z) {
-    let key = `${x},${z}`
-    return this.chunkCache[key]
-  }
-
-  addColumn(x, z, chunk) {
-    let [bx, bz] = [x * 16, z * 16]
-    let key = `${x},${z}`
-    if (!this.chunkCache[key]) {
-      this.chunkCache[key] = chunk
-    }
+  // always send column
+  addColumn(cx, cz, chunk) {
+    let [bx, bz] = [cx * 16, cz * 16]
     global.world.addColumn(bx, bz, chunk.toJson())
-    console.log('addColumn', x, z, chunk)
   }
 
-  showColumn(x, z, col) {
-    return this.addColumn(x, z, col);
-  }
-
-  // Check if we can unload any chunks
-  processChunks() {
-
-  }
-
-  getLoadedChunks() {
-    return [
-      ...Object.keys(global.world.loadedChunks),
-      ...Object.keys(this.chunkCache)
-    ]
+  // only send if unloaded
+  showColumn(cx, cz, chunk) {
+    let [bx, bz] = [cx * 16, cz * 16]
+    if (!global.world.loadedChunks[bx + ',' + bz]) {
+      return this.addColumn(cx, cz, chunk)
+    }
   }
 
   isChunkLoaded(hash) {
     return global.world.loadedChunks[hash]
+  }
+
+  getLoadedChunks() {
+    let keys = global.world.loadedChunks
+    let ret = []
+    for (var key in keys) {
+      let [bx, bz] = key.split(',')
+      ret.push(`${bx >> 4},${bz >> 4}`)
+    }
+    return ret
   }
 
   // DOM Events

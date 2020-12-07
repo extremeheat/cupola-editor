@@ -17,7 +17,7 @@ class Editor3D extends Viewer3D {
 
   startSelection() {
     console.log('[edit] started selection')
-    this.selection = new Selection(this.provider)
+    this.selection = new Selection(this.viewer, this.provider)
   }
 
   endSelection() {
@@ -54,6 +54,13 @@ class Editor3D extends Viewer3D {
 
     let children = Object.values(global.world.sectionMeshs)
 
+    if (global.debugRaycasts) {
+      // console.log('-> Looking' , this.lastNearLookingPos, this.lastFarLookingPos)
+      let pos = this.lastFarLookingPos.clone().floor()
+      let [cx,cz] = [pos.x >> 4, pos.z >> 4]
+      console.debug('Looking at', [pos.x, pos.y, pos.z], [cx, cz])
+    }
+
     if (this.selection) {
       let mesh = this.selection.getSelectionMeshes()
       if (mesh.length) {
@@ -61,18 +68,9 @@ class Editor3D extends Viewer3D {
         children.push(...mesh)
       }
 
-      // Highlight on expansion mesh
-      // let exp = this.selection.getExpansionMeshes()
-      // if (exp) {
-      //   for (var e of exp) {
-      //     // children.push(e)
-      //   }
-      // }
-
       // var dist = this.box.position.clone().sub(camera.position).length();
       // this.raycaster.ray.at(4, this.box.position);
 
-      // console.log('-> Looking' , this.lastNearLookingPos, this.lastFarLookingPos)
       let handled = this.selection.handleCursorMove(event, this.lastFarLookingPos)
       if (handled) {
         event.stopPropagation()
@@ -103,7 +101,6 @@ class Editor3D extends Viewer3D {
         n.y <= 0 ? f.y : f.y - 1,
         n.z <= 0 ? f.z : f.z - 1
       )
-      // console.log('Intersects', e, global.myMesh.position, e.point);
       this.lastPos3D = this.highlightMesh.position.clone()
 
       this.selection?.updateCursor(this.lastPos3D)
@@ -111,6 +108,21 @@ class Editor3D extends Viewer3D {
       // set(e.point.x,e.point.y,e.point.z)
       // intersects[ i ].object.material.color.set( 0xff0000 );
     }
+  }
+
+  isChunkInUse(cx, cz) {
+    if (!this.selection) return []
+    return this.selection.getOccupiedChunks().includes(cx + ',' + cz)
+  }
+
+  addColumn(cx, cz, col) {
+    this.selection?.loadSelectionsIn(cx, cz)
+    super.addColumn(cx, cz, col)
+  }
+
+  unloadChunk(cx, cz) {
+    this.selection?.unloadSelectionsIn(cx, cz)
+    super.unloadChunk(cx, cz)
   }
 
   onRender() {

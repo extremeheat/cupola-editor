@@ -40,7 +40,7 @@ class DemoViewerProvider extends ViwerProvider {
 
     this.world = new this.World(this.getChunk.bind(this))
 
-    this.chunks = []
+    this.chunks = {}
   }
 
   async prepare(version) {
@@ -60,6 +60,11 @@ class DemoViewerProvider extends ViwerProvider {
     }
     this.chunks[key] = chunk;
     return chunk;
+  }
+
+  async tick() {
+    this.saveChunks()
+    super.tick()
   }
 
   getBlock(x, y, z) {

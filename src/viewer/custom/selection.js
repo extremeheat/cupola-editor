@@ -3,7 +3,8 @@ const { BlockContainer } = require('../pviewer/blockcontainer')
 
 class Selection {
 
-  constructor(provider) {
+  constructor(editor, provider) {
+    this.editor = editor
     this.provider = provider
     this.startedSelection = false
     // when making our initial selection:
@@ -22,8 +23,7 @@ class Selection {
     this.container = null
     this.lastMesh = null
 
-    // TODO: Move this to overlays & allow pasting multiple times
-    this.mesh = []
+    this.hiddenLayers = []
 
     // TODO: convert this to typescript enum
     // enum State { Busy, Selecting, Selected, Dragging, Precut, Precopy }
@@ -62,6 +62,7 @@ class Selection {
     this.overlay = new SelectionBox('selection')
     this.superlays.forEach(e => e.clear())
     this.superlays = []
+    this.hiddenLayers = []
     setSuggestedActions([{ title: 'Create selection [Ctrl-Click]' }])
   }
 
@@ -75,17 +76,19 @@ class Selection {
     //   this.stateData[key] = modes[key]
     // }
   }
-  
+
   setActiveSuperlay(id) {
     if (id == -1) {
       if (this.activeSuperlay != -1) {
         let superlay = this.superlays[this.activeSuperlay]
+        superlay.hasAttachedTransformControls = false
         global.transformControls.detach(superlay.selectionMesh)
       }
       global.scene.remove(global.transformControls)
     } else {
       let superlay = this.superlays[id]
       global.transformControls.attach(superlay.group)
+      superlay.hasAttachedTransformControls = true
       global.scene.add(global.transformControls)
     }
     this.activeSuperlay = id
@@ -123,6 +126,58 @@ class Selection {
 
   getExpansionMeshes() {
     return this.overlay.expandMeshes
+  }
+
+  getOccupiedChunks() {
+    let ckeys = this.overlay.getChunksKeysInBB()
+
+    this.superlays.forEach(e => {
+      let keys = e.getChunksKeysInBB()
+      for (let key of keys) {
+        if (!ckeys.includes(ke)) ckeys.push(key)
+      }
+    })
+    return ckeys
+  }
+
+  hideSelection(layer) {
+    this.hiddenLayers.filter(e => e != layer.objectId)
+    this.hiddenLayers.push(layer)
+    if (layer.hasAttachedTransformControls) global.scene.remove(global.transformControls)
+    layer.hide()
+  }
+
+  unhideSelection(layer) {
+    this.hiddenLayers.filter(e => e != layer.objectId)
+    if (layer.hasAttachedTransformControls) global.scene.add(global.transformControls)
+    layer.show()
+  }
+
+  loadSelectionsIn(cx, cz) {
+    let key = cx + ',' + cz
+    for (var hidden of this.hiddenLayers) {
+      let chunks = hidden.getChunksKeysInBB()
+      if (chunks.includes(key)) {
+        this.unhideSelection(hidden)
+      }
+    }
+  }
+
+  // Remove from the scene any selections which intersect pos
+  unloadSelectionsIn(cx, cz) {
+    let key = cx + ',' + cz
+    
+    let ckeys = this.overlay.getChunksKeysInBB()
+    if (ckeys.includes(key)) {
+      this.hideSelection(this.overlay)
+    }
+
+    this.superlays.forEach(e => {
+      let keys = e.getChunksKeysInBB()
+      if (keys.includes(key)) {
+        this.hideSelection(e)
+      }
+    })
   }
 
   // called when the mouse cursor moves, and a raycast

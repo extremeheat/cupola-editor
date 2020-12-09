@@ -1,15 +1,15 @@
-const { addBlockHighlight } = require('./overlays')
+const { createBlockHighlightMesh } = require('./overlays')
 const { Selection } = require('./selection')
 const Viewer3D = require('./viewer')
 
 class Editor3D extends Viewer3D {
-  constructor(viewer) {
-    super(viewer)
-    this.viewer = viewer
+  constructor(provider) {
+    super(provider)
 
     // Raycasted coordinate user is looking at
     this.lastFarLookingPos = new THREE.Vector3()
     this.lastNearLookingPos = new THREE.Vector3()
+    
     this.highlightMesh = null
     this.selection = null
     this.lastPos3D = null
@@ -17,7 +17,7 @@ class Editor3D extends Viewer3D {
 
   startSelection() {
     console.log('[edit] started selection')
-    this.selection = new Selection(this.viewer, this.provider)
+    this.selection = new Selection(this, this.provider)
   }
 
   endSelection() {
@@ -27,18 +27,27 @@ class Editor3D extends Viewer3D {
 
   onStarted() {
     super.onStarted()
-    this.highlightMesh = addBlockHighlight()
-
-    // this.box = new THREE.Mesh(new THREE.BoxBufferGeometry(), new THREE.MeshBasicMaterial({
-    //   color: "red",
-    //   wireframe: true
-    // }));
-    // scene.add(this.box);
+    this.startSelection()
+    this.highlightMesh = createBlockHighlightMesh()
+    this.highlightMesh2 = createBlockHighlightMesh()
+    global.controls.enablePan = false
   }
 
   blockHighlight(x, y, z) {
-    // console.info('hili', x, y, z)
     this.highlightMesh.position.set(x, y, z)
+  }
+
+  showHighlight() {
+    global.scene.add(this.highlightMesh)
+  }
+
+  hideHighlight() {
+    global.scene.remove(this.highlightMesh)
+  }
+
+  // for debugging
+  blockHighlight2(x, y, z) {
+    this.highlightMesh2.position.set(x, y, z)
   }
 
   onControlUpdate(event) {
@@ -50,12 +59,14 @@ class Editor3D extends Viewer3D {
     this.lastCursorPos = this.mousePos.clone()
 
     this.raycaster.ray.at(40, this.lastFarLookingPos)
-    this.raycaster.ray.at(4, this.lastNearLookingPos)
+    this.raycaster.ray.at(6, this.lastNearLookingPos)
 
     let children = Object.values(global.world.sectionMeshs)
 
     if (global.debugRaycasts) {
-      // console.log('-> Looking' , this.lastNearLookingPos, this.lastFarLookingPos)
+      let near = this.lastNearLookingPos.clone().floor()
+      this.blockHighlight2(near.x, near.y, near.z)
+      console.log('-> Looking' , this.lastNearLookingPos, this.lastFarLookingPos)
       let pos = this.lastFarLookingPos.clone().floor()
       let [cx,cz] = [pos.x >> 4, pos.z >> 4]
       console.debug('Looking at', [pos.x, pos.y, pos.z], [cx, cz])
@@ -64,7 +75,6 @@ class Editor3D extends Viewer3D {
     if (this.selection) {
       let mesh = this.selection.getSelectionMeshes()
       if (mesh.length) {
-        // console.log('ADDED mesh',mesh)
         children.push(...mesh)
       }
 
@@ -105,8 +115,6 @@ class Editor3D extends Viewer3D {
 
       this.selection?.updateCursor(this.lastPos3D)
       break;
-      // set(e.point.x,e.point.y,e.point.z)
-      // intersects[ i ].object.material.color.set( 0xff0000 );
     }
   }
 
@@ -127,8 +135,6 @@ class Editor3D extends Viewer3D {
 
   onRender() {
     super.onRender()
-    // this.onUpdate()
-    // console.info('r')
   }
 
   // DOM EVENTS
@@ -149,19 +155,25 @@ class Editor3D extends Viewer3D {
   }
 
   onPointerDown = (e) => {
-    if (e.ctrlKey) {
+    // console.log('pointer down', e)
+    //TODO: move this logic to selection.js
+    if (e.ctrlKey && e.button == 0) {
       this.onCursorControlClick();
     } else {
-      this.selection?.handlePointerDown()
+      this.selection?.handlePointerDown(e)
     }
+
+    this.hideHighlight()
   }
 
   onPointerUp = (e) => {
-    this.selection?.handlePointerUp()
+    // console.log('pointer up', e)
+    this.selection?.handlePointerUp(e)
+    this.showHighlight()
   }
 
   onKeyDown = (e) => {
-    console.log('keydown', e)
+    // console.log('keydown', e)
     this.selection?.handleKey(e.code)
   }
 

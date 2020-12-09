@@ -66,9 +66,10 @@ class SelectionBox {
     // to see block boundaries. 
     let material = new THREE.MeshBasicMaterial({
       transparent: true,
-      opacity: 0.2,
+      opacity: 0.4,
       color: this.color,
       vertexColors: THREE.FaceColors, // allow us to recolor sides
+      side: THREE.DoubleSide,
       // depthTest: false,
     })
 
@@ -373,7 +374,7 @@ function getChunksInBB(box) {
 
 // HOVER HIGHLIGHT
 
-function addBlockHighlight() {
+function createBlockHighlightMesh() {
   const geometry = new THREE.BoxGeometry(1.01, 1.01, 1.01)
   geometry.translate(0.5, 0.5, 0.5)
 
@@ -382,40 +383,11 @@ function addBlockHighlight() {
     opacity: 0.5,
     color: 0xff0000,
     side: THREE.DoubleSide,
-
-    // depthWrite: false // :D
-    // side: THREE.BackSide
-  });
-
-  let material2 = new THREE.MeshBasicMaterial({
-    // transparent: false,
-    opacity: 1,
-    color: 0xff0000,
-    side: THREE.DoubleSide,
-    // wireframe: true,
-    wireframeLinewidth: 40,
-    depthTest: false
-    // depthWrite: false,
-    // depthWrite: false // :D
-    // side: THREE.BackSide
-  });
-
-
+  })
 
   let mesh = new THREE.Mesh(geometry, material)
-  let mesh2 = new THREE.Mesh(geometry, material2)
-  // setInterval(() => {
-  //   mesh.translateY(1);
-  // }, 2000)
-
-  // global.scene.add(mesh2)
-  mesh.renderOrder = 2;
-
-  global.scene.add(mesh)
-  // global.myMesh = mesh;
-  // global.scene.add(mesh2)
-
+  mesh.renderOrder = 2
   return mesh
 }
 
-module.exports = { SelectionBox, addBlockHighlight }
+module.exports = { SelectionBox, createBlockHighlightMesh }

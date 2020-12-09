@@ -17,6 +17,7 @@ class Selection {
     this.dragDisabled = false
     this.selectedVerticies = []
     this.opStack = []
+    this.startedAltDragging = false
     this.startedDragging = false
     this.vertsBeforeDragging = null
     this.draggingHistory = []
@@ -51,6 +52,7 @@ class Selection {
     this.setActiveSuperlay(-1)
     // if we cannot drag a selection right now (control held)
     this.dragDisabled = false
+    this.startedAltDragging = false
     this.startedDragging = false
     this.vertsBeforeDragging = null
     this.draggingHistory = []
@@ -98,10 +100,12 @@ class Selection {
     this.dragDisabled = disabled
     if (disabled) {
       global.controls.enableRotate = false
-      global.controls.enablePan = false
+      // disabled in editor - we already have WASD keys for panning
+      // we instead use this right click for selections
+      // global.controls.enablePan = false
     } else {
       global.controls.enableRotate = true
-      global.controls.enablePan = true
+      // global.controls.enablePan = true
     }
   }
 
@@ -166,7 +170,7 @@ class Selection {
   // Remove from the scene any selections which intersect pos
   unloadSelectionsIn(cx, cz) {
     let key = cx + ',' + cz
-    
+
     let ckeys = this.overlay.getChunksKeysInBB()
     if (ckeys.includes(key)) {
       this.hideSelection(this.overlay)
@@ -222,7 +226,7 @@ class Selection {
           break
         }
         return true
-      } else {
+      } else if (!this.dragDisabled) {
         let hit = false
         for (var intersect of intersects) {
           // console.log(intersect.object)
@@ -240,15 +244,29 @@ class Selection {
     }
   }
 
-  handlePointerDown() {
+  handlePointerDown(event) {
     // console.warn('Pointr down')
     // TODO: instead of this.selectedVerticies.length == 2, add utility function to check if
     // a complete selection has been made
-    if (this.state == 'selecting' && this.selectedVerticies.length == 2) {
-      if (this.overlay.activeFace && !this.startedDragging) {
-        this.startedDragging = true
-        this.vertsBeforeDragging = cloneVector3a(this.overlay.getSelectionVerts())
-        // console.warn('Start draggig', this.vertsBeforeDragging)
+    if (this.state == 'selecting') {
+      // right click
+      if ((event.button == 2 || event.altKey)) {
+        let pos = this.editor.lastNearLookingPos.clone()
+
+        this.startedAltDragging = true
+        this.setDragDisabled(true)
+        if (this.selectedVerticies.length == 0) { // first point
+          this.selectedVerticies[0] = pos
+        } else { // second point
+          this.selectedVerticies[1] = pos
+          this.showSelectionBox(null, pos)
+        }
+      } else if (this.selectedVerticies.length == 2) {
+        if (this.overlay.activeFace && !this.startedDragging) {
+          this.startedDragging = true
+          this.vertsBeforeDragging = cloneVector3a(this.overlay.getSelectionVerts())
+          // console.warn('Start draggig', this.vertsBeforeDragging)
+        }
       }
     } else if (this.isCopyOrCutting()) {
       if (this.activeSuperlay != -1 && !this.dragDisabled) {
@@ -263,6 +281,11 @@ class Selection {
   }
 
   handlePointerUp() {
+    if (this.startedAltDragging) {
+      this.startedAltDragging = false
+      this.setDragDisabled(false)
+    }
+
     if (this.startedDragging) {
       console.warn('End draggig')
       this.startedDragging = false
@@ -303,10 +326,11 @@ class Selection {
       } else if (this.state == 'operation' && this.stateData.stage == 'post') {
         this.commit()
       }
-    }
-
-    // TODO: Fix race condition when copy/pasting
-    if (this.state == 'selected') {
+    } else if (code == 'Escape') {
+      if (this.state == 'selecting') {
+        this.reset()
+      }
+    } else if (this.state == 'selected') {
       if (code == 'KeyC' && global.controls.keyDowns.includes('ControlLeft')) {
         console.log('ctrl+c!!')
         this.copy()
@@ -314,9 +338,7 @@ class Selection {
         console.log('ctrl+x!!')
         this.cut()
       }
-    }
-
-    if (this.isCopyOrCutting()) {
+    } else if (this.isCopyOrCutting()) {
       if (code == 'KeyV' && global.controls.keyDowns.includes('ControlLeft')) {
         console.log('ctrl+v!!')
         this.paste()
@@ -336,12 +358,37 @@ class Selection {
     }
   }
 
+  showSelectionBox(pos1, pos2) {
+    pos1 = pos1 || this.selectedVerticies[0]
+    pos2 = pos2 || this.selectedVerticies[1]
+    if (!pos1 && !pos2) {
+      console.info('[selection] missing selection points', pos1, pos2)
+      return
+    }
+
+    this.overlay.fromPoints(pos1, pos2)
+  }
+
+  clearSelectionBox() {
+    this.selectedVerticies = []
+    this.overlay.clear()
+  }
+
   updateCursor(position) {
     if (this.state == 'selecting') {
-      if (this.selectedVerticies.length == 1) {
+      if (this.startedAltDragging) {
+        const pos = this.editor.lastNearLookingPos.clone()
+        if (this.selectedVerticies.length == 0) {
+          this.selectedVerticies[0] = pos
+          this.showSelectionBox(pos, pos)
+        } else {
+          this.selectedVerticies[1] = pos
+          this.showSelectionBox(null, pos)
+        }
+      } else if (this.selectedVerticies.length == 1) {
         clearTimeout(this.selectionTimer)
         this.selectionTimer = setTimeout(() => {
-          this.overlay.fromPoints(this.selectedVerticies[0], position)
+          this.showSelectionBox(null, position)
         }, 50);
       } else if (this.selectedVerticies.length == 2) {
         setSuggestedActions([{ title: 'Drag face to expand' }, { title: 'Confirm selection (Enter)' }])

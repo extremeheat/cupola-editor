@@ -3,6 +3,7 @@ class SelectionBox {
     this.id = id
     this.objectId = Date.now()
     this.group = new THREE.Group()
+    this.group.scale.setScalar(1.001) // avoid overlapping clipping
     this.selectionMesh = null
     // Outline
     this.wireframeMesh = null
@@ -50,7 +51,8 @@ class SelectionBox {
     let length = Math.abs(Math.min(pos1.z, pos2.z) - Math.max(pos1.z, pos2.z)) + 1
     console.log('[box] HWL', height, width, length, pos1, pos2)
 
-    let geometry = new THREE.BoxGeometry(width + 0.01, height + 0.01, length + 0.01)
+    const epsilon = 0.001
+    let geometry = new THREE.BoxGeometry(width + epsilon, height + epsilon, length + epsilon)
     if (noTrans) {
       geometry.translate(width % 2 == 0 ? 0 : 0.5,
         height % 2 == 0 ? 0 : 0.5, length % 2 == 0 ? 0 : 0.5)
@@ -83,8 +85,9 @@ class SelectionBox {
     })
 
     let mesh = new THREE.Mesh(geometry, material)
-    mesh.renderOrder = 8;
+    mesh.renderOrder = 20
     mesh.name = this.id
+    mesh.scale.setScalar(1.002)
     let wireframeMesh = new THREE.Mesh(geometry, wireframeMaterial)
     wireframeMesh.renderOrder = 9;
 
@@ -112,12 +115,21 @@ class SelectionBox {
   }
 
   showSiblings(align = true) {
+    this.selectionMesh.geometry.computeBoundingBox()
     for (var mesh of this.siblingMeshes) {
       if (align) {
         mesh.geometry.center() // remove geometry offset
+        
+        let a = this.selectionMesh.geometry.boundingBox.clone()
+        let b = mesh.geometry.boundingBox.clone()
+
+        let delta = b.max.sub(b.min).sub(a.max.sub(a.min))
+        delta.multiplyScalar(0.5)
+        
         let offset = this.selectionMesh.geometry.boundingSphere.center
-        mesh.geometry.translate(offset.x, offset.y, offset.z)
-        console.warn('translated', mesh, offset)
+        const epsilon = 0.0004
+        mesh.geometry.translate(offset.x + delta.x, offset.y + delta.y + epsilon, offset.z + delta.z)
+        console.warn('[selection] aligned', delta, mesh, offset)
       }
       this.group.add(mesh)
     }

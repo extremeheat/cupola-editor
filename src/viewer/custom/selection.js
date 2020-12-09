@@ -450,6 +450,7 @@ class Selection {
     if (!bb) {
       throw 'No active bounding box!'
     }
+    // console.log('[selection] bb', bb)
     let minX = Math.round(bb.min.x); let maxX = Math.round(bb.max.x);
     let minY = Math.round(bb.min.y); let maxY = Math.round(bb.max.y);
     let minZ = Math.round(bb.min.z); let maxZ = Math.round(bb.max.z);
@@ -474,7 +475,8 @@ class Selection {
     return new Promise(res =>
       global.world.requestMesh(container, (mesh) => {
         console.log('[selection] pulled mesh ', mesh)
-        mesh.scale.setScalar(1.001) // slightly scale bigger to avoid tearing from overlapping mesh
+        // mesh.scale.setScalar(1.001) // slightly scale bigger to avoid tearing from overlapping mesh
+        mesh.renderOrder = 20
         mesh.geometry.center() // remove geometry offset
         global.pulledMesh = mesh
         res(mesh)

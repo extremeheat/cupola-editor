@@ -5,7 +5,6 @@
   "main": "src/main/index.js",
   "scripts": {
     "test": "jest --verbose",
-    "pretest": "npm run lint && require-self",
     "prepare": "npm install require-self && require-self",
     "build": "tsc && tsc -p src/tsconfig.json",
     "watch": "tsc -w",

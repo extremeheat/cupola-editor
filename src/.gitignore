@@ -1,8 +1,6 @@
-main/*.js
-main/AssetLoader.ts
-client/*.js
-editor/*.js
-editor/sidebar/*.js
-renderer/
+main/**/*.js
+client/**/*.js
+core/**/.js
 _*
-core/*
+core/
+core/commands/*

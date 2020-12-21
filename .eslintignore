@@ -6,4 +6,6 @@ src/assets
 
 # temp
 src/core/commands/
-src/viewer/**/*.js
+src/viewer/pviewer/*.js
+
+stats.js

@@ -14,7 +14,7 @@ async function makeTextureAtlas(mcAssets) {
   const g = canvas.getContext('2d')
 
   const texturesIndex = {}
-  let waits = 0;
+  let waits = 0
 
   for (const i in textureFiles) {
     const x = (i % texSize) * tileSize
@@ -44,13 +44,13 @@ async function makeTextureAtlas(mcAssets) {
   await new Promise(res => {
     let timer = setInterval(() => {
       if (waits == 0) {
-        clearInterval(timer);
+        clearInterval(timer)
         // console.log('[atlas] created image');
         // await blobToDataURL(await canvas.convertToBlob())
         // console.log(canvas.toDataURL())
-        res();
+        res()
       }
-    }, 400);
+    }, 400)
   })
 
   let ret = { json: { size: tileSize / imgSize, textures: texturesIndex } }

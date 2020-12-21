@@ -1,10 +1,11 @@
+/* global THREE */
 const { initialize } = require('../pviewer/index')
 const CustomControls = require('../custom/controls')
 
 async function sleep(ms) {
   return new Promise((res) => {
     setTimeout(() => {
-      res();
+      res()
     }, ms)
   })
 }
@@ -42,7 +43,7 @@ class Viewer3D {
 
     // allow some time for page load...
     // TODO: Bypass double postMessage & call worker directly do this sync
-    await sleep(100);
+    await sleep(100)
 
     this.onStarted()
   }

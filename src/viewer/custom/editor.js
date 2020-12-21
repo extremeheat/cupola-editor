@@ -1,3 +1,4 @@
+/* global THREE */
 const { createBlockHighlightMesh } = require('./overlays')
 const { Selection } = require('./selection')
 const Viewer3D = require('./viewer')
@@ -51,10 +52,10 @@ class Editor3D extends Viewer3D {
   }
 
   onControlUpdate(event) {
-    this.raycaster.setFromCamera(this.mousePos, global.camera);
+    this.raycaster.setFromCamera(this.mousePos, global.camera)
 
     if (this.mousePos.equals(this.lastCursorPos)) {
-      return;
+      return
     }
     this.lastCursorPos = this.mousePos.clone()
 
@@ -101,8 +102,8 @@ class Editor3D extends Viewer3D {
     // console.log('Intersects', intersects);
     for (let i = 0; i < intersects.length; i++) {
       let intersect = intersects[i]
-      if (intersect.object.name == 'selection') continue;
-      let e = intersects[i];
+      if (intersect.object.name == 'selection') continue
+      let e = intersects[i]
       let f = e.point.clone().floor()
       let n = e.face.normal
 
@@ -114,7 +115,7 @@ class Editor3D extends Viewer3D {
       this.lastPos3D = this.highlightMesh.position.clone()
 
       this.selection?.updateCursor(this.lastPos3D)
-      break;
+      break
     }
   }
 
@@ -158,7 +159,7 @@ class Editor3D extends Viewer3D {
     // console.log('pointer down', e)
     //TODO: move this logic to selection.js
     if (e.ctrlKey && e.button == 0) {
-      this.onCursorControlClick();
+      this.onCursorControlClick()
     } else {
       this.selection?.handlePointerDown(e)
     }
@@ -182,10 +183,10 @@ class Editor3D extends Viewer3D {
   }
 
   registerHandlers() {
-    window.addEventListener('pointerdown', this.onPointerDown, false);
-    window.addEventListener('pointerup', this.onPointerUp, false);
-    window.addEventListener('keydown', this.onKeyDown, false);
-    window.addEventListener('keyup', this.onKeyUp, false);
+    window.addEventListener('pointerdown', this.onPointerDown, false)
+    window.addEventListener('pointerup', this.onPointerUp, false)
+    window.addEventListener('keydown', this.onKeyDown, false)
+    window.addEventListener('keyup', this.onKeyUp, false)
 
     super.registerHandlers()
   }

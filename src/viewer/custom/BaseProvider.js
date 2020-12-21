@@ -1,11 +1,11 @@
 class ViwerProvider {
   constructor(version, center, viewDistance) {
-    this.viewer = false;
+    this.viewer = false
     this.version = version
-    this.center = center;
-    this.viewDistance = viewDistance;
-    this.atlas = null;
-    this.blockstates = null;
+    this.center = center
+    this.viewDistance = viewDistance
+    this.atlas = null
+    this.blockstates = null
 
     this.lastCameraPos = center.offset(0, 60, 0)
     this.chunkCache = {}
@@ -21,7 +21,7 @@ class ViwerProvider {
 
   async init(viewer) {
     this.viewer = viewer;
-    [this.atlas, this.blockstates] = await this.prepare(this.version);
+    [this.atlas, this.blockstates] = await this.prepare(this.version)
     return {
       via: 'electron'
     }
@@ -34,7 +34,7 @@ class ViwerProvider {
   }
 
   getVersionData() {
-    if (!this.viewer) throw 'Not yet initialized';
+    if (!this.viewer) throw 'Not yet initialized'
     const { version, atlas, blockstates } = this
     return { version, atlas, blockstates }
   }
@@ -42,11 +42,11 @@ class ViwerProvider {
   getVisibleChunks(centerPos) {
     let [cx, cy, cz] = [centerPos.x >> 4, centerPos.y >> 4, centerPos.z >> 4]
 
-    let visibleChunks = [];
+    let visibleChunks = []
 
     for (let x = cx - this.viewDistance; x <= cx + this.viewDistance; x++) {
       for (let z = cz - this.viewDistance; z <= cz + this.viewDistance; z++) {
-        visibleChunks.push(x + ',' + z);
+        visibleChunks.push(x + ',' + z)
       }
     }
 
@@ -73,7 +73,7 @@ class ViwerProvider {
     // console.info('visible', visibleChunks.toString(), this.lastVisibleChunks.toString())
     if (!isEqual(this.lastVisibleChunks, visibleChunks)) {
       let [r, a] = getDifference(this.lastVisibleChunks, visibleChunks)
-      console.info('[provider] Resending chunks - removed: ', r, 'added:', a)
+      console.debug('[provider] Resending chunks - removed: ', r, 'added:', a)
       await this.sendChunks(visibleChunks)
     }
 
@@ -126,7 +126,7 @@ class ViwerProvider {
         // Only load the column if the chunk is not already in memory
         const chunk = await this.getChunk(x, z)
         this.loadChunk(x, z, chunk)
-        if (!chunk) continue;
+        if (!chunk) continue
         this.viewer.showColumn(x, z, chunk)
       } else {
         this.viewer.showColumn(x, z, loaded)
@@ -143,13 +143,13 @@ class ViwerProvider {
 
   update(cameraPosition) {
     // TODO: Render in more parts of world based on viewDistance
-    this.lastCameraPos = cameraPosition;
+    this.lastCameraPos = cameraPosition
   }
 
   sendDirtyChunks() {
     this.dirtyBlocks = 0
 
-    console.log('[provider] sending dirty chunks', this.dirtyChunks)
+    console.debug('[provider] sending dirty chunks', this.dirtyChunks)
 
     this.dirtyChunks.forEach(async k => {
       let [cx, cz] = k.split(',')
@@ -207,8 +207,8 @@ function isEqual(obj1, obj2) {
 }
 
 function getDifference(arr1, arr2) {
-  let removed = arr1.filter(x => !arr2.includes(x));
-  let added = arr2.filter(x => !arr1.includes(x));
+  let removed = arr1.filter(x => !arr2.includes(x))
+  let added = arr2.filter(x => !arr1.includes(x))
   return [removed, added]
 }
 

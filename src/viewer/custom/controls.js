@@ -1,3 +1,4 @@
+/* eslint-disable */
 // Similar to THREE MapControls with more Minecraft-like
 // controls.
 // Shift = Move Down, Space = Move Up, WSAD to move NSWE

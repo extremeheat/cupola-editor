@@ -65,7 +65,7 @@ class Selection {
     this.superlays.forEach(e => e.clear())
     this.superlays = []
     this.hiddenLayers = []
-    setSuggestedActions([{ title: 'Create selection [Ctrl-Click]' }])
+    global.setSuggestedActions([{ title: 'Create selection [Ctrl-Click]' }])
   }
 
   setState(state, modes) {
@@ -138,7 +138,7 @@ class Selection {
     this.superlays.forEach(e => {
       let keys = e.getChunksKeysInBB()
       for (let key of keys) {
-        if (!ckeys.includes(ke)) ckeys.push(key)
+        if (!ckeys.includes(key)) ckeys.push(key)
       }
     })
     return ckeys
@@ -203,7 +203,7 @@ class Selection {
 
           if (updatedColors) {
             isMakingSelection = true
-            break;
+            break
           }
         }
       }
@@ -215,7 +215,7 @@ class Selection {
     } else if (this.isCopyOrCutting()) {
       if (this.startedDragging) {
         // console.log('Intersections ', intersects)
-        for (var intersect of intersects) {
+        for (let intersect of intersects) {
           let id = intersect.object.name
           if (id == this.superlayId || id == this.overlay.id) {
             continue
@@ -228,7 +228,7 @@ class Selection {
         return true
       } else if (!this.dragDisabled) {
         let hit = false
-        for (var intersect of intersects) {
+        for (let intersect of intersects) {
           // console.log(intersect.object)
           if (intersect.object.name == this.superlayId) {
             // console.log('HIT!!', intersect.object)
@@ -389,9 +389,9 @@ class Selection {
         clearTimeout(this.selectionTimer)
         this.selectionTimer = setTimeout(() => {
           this.showSelectionBox(null, position)
-        }, 50);
+        }, 50)
       } else if (this.selectedVerticies.length == 2) {
-        setSuggestedActions([{ title: 'Drag face to expand' }, { title: 'Confirm selection (Enter)' }])
+        global.setSuggestedActions([{ title: 'Drag face to expand' }, { title: 'Confirm selection (Enter)' }])
       }
     }
   }
@@ -438,7 +438,7 @@ class Selection {
       this.state = 'selected'
       this.overlay.markConfirmed()
 
-      setSuggestedActions([{ title: 'Copy [Ctrl-C]' }, { title: 'Cut [Ctrl-X]' }])
+      global.setSuggestedActions([{ title: 'Copy [Ctrl-C]' }, { title: 'Cut [Ctrl-X]' }])
     }
   }
 
@@ -451,10 +451,10 @@ class Selection {
       throw 'No active bounding box!'
     }
     // console.log('[selection] bb', bb)
-    let minX = Math.round(bb.min.x); let maxX = Math.round(bb.max.x);
-    let minY = Math.round(bb.min.y); let maxY = Math.round(bb.max.y);
-    let minZ = Math.round(bb.min.z); let maxZ = Math.round(bb.max.z);
-    let w = maxX - minX; let l = maxZ - minZ; let h = maxY - minY;
+    let minX = Math.round(bb.min.x); let maxX = Math.round(bb.max.x)
+    let minY = Math.round(bb.min.y); let maxY = Math.round(bb.max.y)
+    let minZ = Math.round(bb.min.z); let maxZ = Math.round(bb.max.z)
+    let w = maxX - minX; let l = maxZ - minZ; let h = maxY - minY
     let container = new BlockContainer(this.provider.version, h, w, l, minX, minY, minZ)
     for (var x = minX; x < maxX; x++) {
       for (var z = minZ; z < maxZ; z++) {
@@ -489,12 +489,12 @@ class Selection {
   // The staged selection is written to the world
   commit() {
     if (!this.isCopyOrCutting()) {
-      console.warn("[selection] can't commit because not copy/cutting")
+      console.warn('[selection] can\'t commit because not copy/cutting')
       return
     }
 
     if (this.stateData.stage != 'post') {
-      console.warn("[selection] can't commit until paste")
+      console.warn('[selection] can\'t commit until paste')
     }
     console.assert(this.container, 'missing container!')
     console.log('[select] commiting!')
@@ -502,9 +502,9 @@ class Selection {
     const c = this.container
 
     if (this.stateData.cutting) {
-      for (var x = c.minX; x < c.minX + c.w; x++) {
-        for (var y = c.minY; y < c.minY + c.h; y++) {
-          for (var z = c.minZ; z < c.minZ + c.l; z++) {
+      for (let x = c.minX; x < c.minX + c.w; x++) {
+        for (let y = c.minY; y < c.minY + c.h; y++) {
+          for (let z = c.minZ; z < c.minZ + c.l; z++) {
             this.provider.setBlockStateId(x, y, z, 0)
             // console.log('setBlock0', x, y, z, 0)
           }
@@ -517,9 +517,9 @@ class Selection {
       // let max = superlay.point2
       let [min, max] = superlay.getRoundedBoundingBox()
 
-      for (var x = min.x, X = c.minX; x <= max.x; x++, X++) {
-        for (var y = min.y, Y = c.minY; y <= max.y; y++, Y++) {
-          for (var z = min.z, Z = c.minZ; z <= max.z; z++, Z++) {
+      for (let x = min.x, X = c.minX; x <= max.x; x++, X++) {
+        for (let y = min.y, Y = c.minY; y <= max.y; y++, Y++) {
+          for (let z = min.z, Z = c.minZ; z <= max.z; z++, Z++) {
             this.provider.setBlock(x, y, z, c.getBlock({ x: X, y: Y, z: Z }))
             // console.log('setBlock1', x, y, z, X, Y, Z, c.getBlock({ x: X, y: Y, z: Z }))
           }
@@ -537,7 +537,7 @@ class Selection {
     this.overlay.color = 0x00FFFF
     this.overlay.recolorFaces()
     this.overlay.recolor(0x00FFFF)
-    setSuggestedActions([{ title: 'Paste [Ctrl-V]' }])
+    global.setSuggestedActions([{ title: 'Paste [Ctrl-V]' }])
 
     this.container = await this.pull()
     let mesh = await this.generateMesh(this.container)
@@ -551,7 +551,7 @@ class Selection {
     this.state = 'busy'
     this.overlay.color = 0xFFFFFF
     this.overlay.recolorFaces()
-    setSuggestedActions([{ title: 'Paste [Ctrl-V]' }])
+    global.setSuggestedActions([{ title: 'Paste [Ctrl-V]' }])
 
     this.container = await this.pull()
     let mesh = await this.generateMesh(this.container)
@@ -579,7 +579,7 @@ class Selection {
 
     this.superlays.push(box)
 
-    setSuggestedActions([{ title: 'Paste [Ctrl-V]' }, { title: 'Translate [Ctrl]' }, { title: 'Save changes (Enter)' }])
+    global.setSuggestedActions([{ title: 'Paste [Ctrl-V]' }, { title: 'Translate [Ctrl]' }, { title: 'Save changes (Enter)' }])
   }
 }
 

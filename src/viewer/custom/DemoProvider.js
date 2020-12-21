@@ -1,27 +1,27 @@
-const { TouchBarOtherItemsProxy } = require('electron');
-const { Vec3 } = require('vec3');
-const ViwerProvider = require('./BaseProvider');
+const { TouchBarOtherItemsProxy } = require('electron')
+const { Vec3 } = require('vec3')
+const ViwerProvider = require('./BaseProvider')
 
-const prepareAssets = require('../bridge/prepare');
+const prepareAssets = require('../bridge/prepare')
 
 // TODO: Refactor this to use IPC to pre-generate atlas/blockstate
 // data for quick access
 async function prepare(version) {
-  console.info('Preping...');
+  console.info('Preping...')
   // let { uri, blockstates } = await ipcRenderer.invoke('prepare', version);
-  let [uri, blockstates] = await prepareAssets(version);
+  let [uri, blockstates] = await prepareAssets(version)
 
-  return [uri, blockstates];
+  return [uri, blockstates]
 }
 
 function getRandomInt(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+  min = Math.ceil(min)
+  max = Math.floor(max)
+  return Math.floor(Math.random() * (max - min + 1)) + min
 }
 
 function defaultGenerator(x, y, z) {
-  if (y < 30) return getRandomInt(0, 10);
+  if (y < 30) return getRandomInt(0, 10)
   if (y > 0) return 0
   return 1
 }
@@ -33,10 +33,10 @@ function chunkKey(cx, cz) {
 class DemoViewerProvider extends ViwerProvider {
   constructor(version, generator = defaultGenerator, center = new Vec3(0, 0, 0), viewDistance = 4) {
     super(version, center, viewDistance)
-    this.generator = generator;
+    this.generator = generator
 
-    this.World = require('prismarine-world')(version);
-    this.Chunk = require('prismarine-chunk')(version);
+    this.World = require('prismarine-world')(version)
+    this.Chunk = require('prismarine-chunk')(version)
 
     this.world = new this.World(this.getChunk.bind(this))
 
@@ -58,9 +58,14 @@ class DemoViewerProvider extends ViwerProvider {
         }
       }
     }
-    this.chunks[key] = chunk;
-    return chunk;
+    this.chunks[key] = chunk
+    return chunk
   }
+
+  // Uncomment to disable chunk loading on move:
+  // startChunkStream() {
+  //   this.tick()
+  // }
 
   async tick() {
     this.saveChunks()
@@ -86,4 +91,4 @@ class DemoViewerProvider extends ViwerProvider {
   }
 }
 
-module.exports = DemoViewerProvider;
+module.exports = DemoViewerProvider

@@ -1,3 +1,4 @@
+/* global THREE */
 class SelectionBox {
   constructor(id) {
     this.id = id
@@ -89,7 +90,7 @@ class SelectionBox {
     mesh.name = this.id
     mesh.scale.setScalar(1.002)
     let wireframeMesh = new THREE.Mesh(geometry, wireframeMaterial)
-    wireframeMesh.renderOrder = 9;
+    wireframeMesh.renderOrder = 9
 
     // let cp = getCenterPoint(mesh)
     // console.log('Center point', cp)
@@ -136,8 +137,8 @@ class SelectionBox {
   }
 
   fromPoints(point1, point2, noTrans, data) {
-    this.addSelectionBox(point1.floor(), point2.floor(), noTrans);
-    let aabb = getAABB(point1, point2);
+    this.addSelectionBox(point1.floor(), point2.floor(), noTrans)
+    let aabb = getAABB(point1, point2)
     this.point1 = aabb.min
     this.point2 = aabb.max
     let center = aabb.getCenter()//.floor();
@@ -157,7 +158,7 @@ class SelectionBox {
       for (var face of this.selectionMesh.geometry.faces) {
         face.color.setHex(0x880000) //reset the default color
       }
-      this.activeFace = false;
+      this.activeFace = false
     }
   }
 
@@ -286,20 +287,21 @@ function getAABB(pos1, pos2) {
 
 
 function getCenterPoint(mesh) {
-  var geometry = mesh.geometry;
-  geometry.computeBoundingBox();
-  center = geometry.boundingBox.getCenter();
-  mesh.localToWorld(center);
-  return center;
+  var geometry = mesh.geometry
+  geometry.computeBoundingBox()
+  const center = geometry.boundingBox.getCenter()
+  mesh.localToWorld(center)
+  return center
 }
 
 function addExpandedSelectionBox(vertices, factor = 20) {
-  let xmin = ymin = zmin = Infinity
-  let xmax = ymax = zmax = null
+  let xmin, ymin, zmin, xmax, ymax, zmax
+  xmin = ymin = zmin = Infinity
+  xmax = ymax = zmax = null
 
   // let face = lastActiveFace
 
-  for (var vert of vertices) {
+  for (let vert of vertices) {
     xmin = vert.x < xmin ? vert.x : xmin
     ymin = vert.y < ymin ? vert.y : ymin
     zmin = vert.z < zmin ? vert.z : zmin
@@ -313,7 +315,7 @@ function addExpandedSelectionBox(vertices, factor = 20) {
 
   const expansion = factor
 
-  for (var vert of vertices) {
+  for (let vert of vertices) {
     if (vert.x == xmin) xminVerts.push([vert.x, vert.y, vert.z], [vert.x - expansion, vert.y, vert.z])
     if (vert.y == ymin) yminVerts.push([vert.x, vert.y, vert.z], [vert.x, vert.y - expansion, vert.z])
     if (vert.z == zmin) zminVerts.push([vert.x, vert.y, vert.z], [vert.x, vert.y, vert.z - expansion])
@@ -344,10 +346,11 @@ function addExpandedSelectionBox(vertices, factor = 20) {
 }
 
 function expandGeometry(geometry, face, mod) {
-  let xmin = ymin = zmin = Infinity
-  let xmax = ymax = zmax = null
+  let xmin, ymin, zmin, xmax, ymax, zmax
+  xmin = ymin = zmin = Infinity
+  xmax = ymax = zmax = null
 
-  for (var vert of geometry.vertices) {
+  for (let vert of geometry.vertices) {
     xmin = vert.x < xmin ? vert.x : xmin
     ymin = vert.y < ymin ? vert.y : ymin
     zmin = vert.z < zmin ? vert.z : zmin
@@ -356,13 +359,13 @@ function expandGeometry(geometry, face, mod) {
     zmax = vert.z > zmax ? vert.z : zmax
   }
 
-  for (var vert of geometry.vertices) {
-    if (face.x > 0 && vert.x == xmax) { vert.x += mod; }
-    if (face.y > 0 && vert.y == ymax) { vert.y += mod; }
-    if (face.z > 0 && vert.z == zmax) { vert.z += mod; }
-    if (face.x < 0 && vert.x == xmin) { vert.x += mod; }
-    if (face.y < 0 && vert.y == ymin) { vert.y += mod; }
-    if (face.z < 0 && vert.z == zmin) { vert.z += mod; }
+  for (let vert of geometry.vertices) {
+    if (face.x > 0 && vert.x == xmax) { vert.x += mod }
+    if (face.y > 0 && vert.y == ymax) { vert.y += mod }
+    if (face.z > 0 && vert.z == zmax) { vert.z += mod }
+    if (face.x < 0 && vert.x == xmin) { vert.x += mod }
+    if (face.y < 0 && vert.y == ymin) { vert.y += mod }
+    if (face.z < 0 && vert.z == zmin) { vert.z += mod }
   }
 
   geometry.verticesNeedUpdate = true

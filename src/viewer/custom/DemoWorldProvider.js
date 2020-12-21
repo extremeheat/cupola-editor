@@ -1,20 +1,20 @@
 const fs = require('fs')
-const ViwerProvider = require('./BaseProvider');
-const { Vec3 } = require('vec3');
+const ViwerProvider = require('./BaseProvider')
+const { Vec3 } = require('vec3')
 
 // To use this demo, create a text file '_demo_world_path.txt'
 // with the path to a folder containing .mca region files
 // for a 1.16 world
 
-const prepareAssets = require('../bridge/prepare');
+const prepareAssets = require('../bridge/prepare')
 
 // TODO: Refactor this to use IPC to pre-generate atlas/blockstate
 // data for quick access
 async function prepare(version) {
-  console.info('Preping...');
-  let [uri, blockstates] = await prepareAssets(version);
+  console.info('Preping...')
+  let [uri, blockstates] = await prepareAssets(version)
 
-  return [uri, blockstates];
+  return [uri, blockstates]
 }
 
 class DemoWorldViewerProvider extends ViwerProvider {
@@ -23,8 +23,8 @@ class DemoWorldViewerProvider extends ViwerProvider {
     super(version, center, viewDistance)
     // this.generator = generator;
 
-    this.World = require('prismarine-world')(version);
-    this.Chunk = require('prismarine-chunk')(version);
+    this.World = require('prismarine-world')(version)
+    this.Chunk = require('prismarine-chunk')(version)
     this.Anvil = require('prismarine-provider-anvil').Anvil(version)
   }
 
@@ -68,4 +68,4 @@ class DemoWorldViewerProvider extends ViwerProvider {
   }
 }
 
-module.exports = DemoWorldViewerProvider;
+module.exports = DemoWorldViewerProvider

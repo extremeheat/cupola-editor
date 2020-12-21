@@ -16,12 +16,13 @@
       "moduleResolution": "node",
       "resolveJsonModule": true,
       "noEmit": false,
+      "baseUrl": "src",
       "experimentalDecorators": true
     },
     "include": [
-      "src/**/*.ts"
+      "src/main/**/*.ts", "src/core/**/*.ts",
     ],
     "exclude": [
-      "src/client/**/*.ts"
+      "**/_*"
     ]
-  }
+}

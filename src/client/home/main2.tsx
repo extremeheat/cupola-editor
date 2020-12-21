@@ -1,5 +1,5 @@
-import { h, render, Component, Fragment } from 'preact';
-const { ipcRenderer } = require('electron');
+import { h, render, Component, Fragment } from 'preact'
+const { ipcRenderer } = require('electron')
 
 enum HP {
   Home,
@@ -41,7 +41,7 @@ const MainKeys = ({ handler }) => {
       </div>
     </div>
   )
-};
+}
 
 const MainCreate = ({ handler }) => {
   return (<div class="boxc">
@@ -61,7 +61,7 @@ const MainCreate = ({ handler }) => {
       <div class="btn">Return to home</div>
     </div>
   </div>)
-};
+}
 
 const MainAbout = ({ handler }) => {
   return (
@@ -74,7 +74,7 @@ const MainAbout = ({ handler }) => {
       </div>
     </div>
   )
-};
+}
 
 export class HomeScreen extends Component {
   state: {
@@ -82,7 +82,7 @@ export class HomeScreen extends Component {
   }
 
   constructor() {
-    super();
+    super()
     this.state = {
       currentScreen: HP.Home
     }
@@ -90,27 +90,27 @@ export class HomeScreen extends Component {
 
   stateControl = (newState) => {
     console.log('Home =>', newState)
-    this.setState({ currentScreen: newState });
+    this.setState({ currentScreen: newState })
   };
 
   render(props, { currentScreen }) {
     console.warn(this.state.currentScreen, HP.Home, this.state.currentScreen == HP.Home)
 
-    let content = null;
+    let content = null
     switch (currentScreen) {
-      case HP.Home:
-        content = <MainMenu handler={this.stateControl} />;
-        break;
-      case HP.Controls:
-        content = <MainKeys handler={this.stateControl} />;
-        break;
-      case HP.Load:
-      case HP.Create:
-        ipcRenderer.send('OpenViewer');
-        break;
-      default:
-        content = <MainAbout handler={this.stateControl} />;
-        break;
+    case HP.Home:
+      content = <MainMenu handler={this.stateControl} />
+      break
+    case HP.Controls:
+      content = <MainKeys handler={this.stateControl} />
+      break
+    case HP.Load:
+    case HP.Create:
+      ipcRenderer.send('OpenViewer')
+      break
+    default:
+      content = <MainAbout handler={this.stateControl} />
+      break
     }
 
     return (

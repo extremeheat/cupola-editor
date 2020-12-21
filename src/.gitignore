@@ -1,6 +1,6 @@
 main/**/*.js
 client/**/*.js
-core/**/.js
+core/**/*.js
 _*
 core/
 core/commands/*

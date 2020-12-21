@@ -19,10 +19,10 @@
       "noEmit": false,
       "experimentalDecorators": true,
       "jsx": "react",
+      "baseUrl": ".",
       "jsxFactory": "h"
     },
     "include": [
-      "client/*.ts", "client/*.tsx",
-      "editor/*.ts", "editor/*.tsx"
+      "client/**/*.ts", "client/**/*.tsx"
     ]
   }

@@ -1,0 +1,9 @@
+_*
+src/main/**/*.js
+src/client/**/*.js
+src/core/**/*.js
+src/assets
+
+# temp
+src/core/commands/
+src/viewer/**/*.js

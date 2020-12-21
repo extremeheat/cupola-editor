@@ -1,10 +1,10 @@
-import { Component, Fragment, h, render } from "preact";
-import { R } from "../main/Strings";
-import { WorldBar } from "./sidebar/World";
-import { PlayerBar } from "./sidebar/Player";
-import { TeapotBar } from "./sidebar/Teapot";
-import { PaletteComponent } from "./Palette";
-const { ipcRenderer } = require('electron');
+import { Component, Fragment, h, render } from 'preact'
+import { R } from 'main/Strings'
+import { WorldBar } from './sidebar/World'
+import { PlayerBar } from './sidebar/Player'
+import { TeapotBar } from './sidebar/Teapot'
+import { PaletteComponent } from './Palette'
+const { ipcRenderer } = require('electron')
 
 enum SidebarModes {
   Hidden, // not active
@@ -55,7 +55,7 @@ const TopBar = ({ handler, editorState }: IEditorComponent) => {
       <div class="topbar-left">
         <span class="clickable" onClick={() => handler(H.EditDimension)}>
           {editorState.viewerDimension}
-        </span>{" "}
+        </span>{' '}
         &nbsp;
         <span
           class="clickable extras"
@@ -101,8 +101,8 @@ const TopBar = ({ handler, editorState }: IEditorComponent) => {
         }
       </div>
     </div>
-  );
-};
+  )
+}
 
 interface ISideBarIcon {
   handle; // on click
@@ -116,84 +116,84 @@ const SideBarIcon = ({ handle, icon, active, id, name }) => {
   return (
     <div
       class={'sidebar-i waves-effect waves-light' + (active ? ' active' : '')}
-      id={"sbi-" + id}
+      id={'sbi-' + id}
       onClick={handle}
     >
       <i class={icon}></i>
       <span>{name}</span>
     </div>
-  );
-};
+  )
+}
 
 const SideBar = ({ handler, editorState }: IEditorComponent) => {
   const sideBarEntries = [
     {
       id: SidebarModes.Select,
       name: R.selection,
-      icon: "gg-assign",
+      icon: 'gg-assign',
       condition: () => editorState.hasActiveSelection,
     },
     {
       id: SidebarModes.World,
       name: R.world,
-      icon: "gg-globe-alt",
+      icon: 'gg-globe-alt',
     },
     {
       id: SidebarModes.Players,
       name: R.players,
-      icon: "gg-user-list",
+      icon: 'gg-user-list',
     },
     {
       id: SidebarModes.Import,
       name: R.import,
-      icon: "gg-import",
+      icon: 'gg-import',
     },
     {
       id: SidebarModes.Filter,
       name: R.filter,
-      icon: "gg-brush",
+      icon: 'gg-brush',
     },
     {
       id: SidebarModes.Plugins,
       name: R.plugins,
-      icon: "gg-add-r"
+      icon: 'gg-add-r'
     },
     {
       id: SidebarModes.Exit,
-      name: "Exit",
-      icon: "gg-home"
+      name: 'Exit',
+      icon: 'gg-home'
     }
-  ];
+  ]
 
   return (
     <div class="sidebar-icons">
       {sideBarEntries.map((v, k) => {
-        if (v.condition && !v.condition()) return;
+        if (v.condition && !v.condition()) return
         return <SideBarIcon
           icon={v.icon}
           name={v.name}
           active={editorState.sidebarMode == v.id}
           id={v.id}
           handle={() => handler(H.ExpandSidebar, v.id)}
-        />;
+        />
       })}
     </div>
-  );
-};
+  )
+}
 
 const SideBarExpanded = (props) => {
-  let { handler, editorState }: IEditorComponent = props;
-  let child;
+  const { handler, editorState }: IEditorComponent = props
+  let child
   switch (editorState.sidebarMode) {
-    case SidebarModes.World:
-      child = <WorldBar {...props} />;
-      break;
-    case SidebarModes.Players:
-      child = <PlayerBar {...props} />;
-      break;
-    default:
-      child = <TeapotBar {...props} />
-      break;
+  case SidebarModes.World:
+    child = <WorldBar {...props} />
+    break
+  case SidebarModes.Players:
+    child = <PlayerBar {...props} />
+    break
+  default:
+    child = <TeapotBar {...props} />
+    break
   }
 
   return (
@@ -205,8 +205,8 @@ const SideBarExpanded = (props) => {
 
 export class EditorView extends Component<any, IEditorState> {
 
-  constructor() {
-    super(arguments);
+  constructor(...args) {
+    super(...args)
     this.state = {
       renderDistance: 4,
       viewerDimension: 'Overworld',
@@ -222,37 +222,37 @@ export class EditorView extends Component<any, IEditorState> {
 
       hasActiveSelection: false,
       hasActiveBrush: false
-    };
+    }
   }
 
   stateController = (action: H, ...args) => {
-    console.log('Requested', H[action]);
+    console.log('Requested', H[action])
     if (action == H.ExpandSidebar) {
-      console.log(' -> ', SidebarModes[args[0]]);
+      console.log(' -> ', SidebarModes[args[0]])
 
-      let newMode = args[0];
+      const newMode = args[0]
 
       if (this.state.sidebarMode == newMode) {
-        this.setState({ sidebarMode: SidebarModes.Hidden });
+        this.setState({ sidebarMode: SidebarModes.Hidden })
       } else {
         this.setState({ sidebarMode: args[0] })
       }
 
       if (newMode == SidebarModes.Exit) {
-        ipcRenderer.send('OpenMain');
+        ipcRenderer.send('OpenMain')
       }
     } else if (action == H.EditViewDistance) {
-      this.setState({ showingPalette: !this.state.showingPalette });
+      this.setState({ showingPalette: !this.state.showingPalette })
     }
   }
 
   render() {
-    console.log("rendered!");
+    console.log('rendered!')
 
-    let childProps = {
+    const childProps = {
       handler: this.stateController,
       editorState: this.state
-    };
+    }
 
     return <Fragment>
       {
@@ -264,8 +264,8 @@ export class EditorView extends Component<any, IEditorState> {
         this.state.sidebarMode == SidebarModes.Hidden ?
           null : <SideBarExpanded {...childProps} />
       }
-    </Fragment>;
+    </Fragment>
   }
 }
 
-render(<EditorView />, document.querySelector('#app'));
+render(<EditorView />, document.querySelector('#app'))

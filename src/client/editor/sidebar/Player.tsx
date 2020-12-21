@@ -1,11 +1,11 @@
-import { Component, Fragment, h, render } from "preact";
-import { R } from "../../main/Strings";
-import { IEditorComponent } from "../editor";
+import { Component, Fragment, h, render } from 'preact'
+import { R } from 'main/Strings'
+import { IEditorComponent } from '../editor'
 
 
 export class PlayerBar extends Component {
   render(props) { // can't destructure here else TS complains :(
-    let { handler, editorState }: IEditorComponent = props;
+    const { handler, editorState }: IEditorComponent = props
 
     return (
       <div class="wrapper">
@@ -23,21 +23,21 @@ export class PlayerBar extends Component {
             >
               <div>
                 ⮞
-        <img
+                <img
                   style="height: 32px; width: 32px; display: inline-block; vertical-align: middle;"
                   src="https://static.wikia.nocookie.net/minecraft/images/2/29/HeadsZ.gif/revision/latest?cb=20190322094900"
                 />
         MyPlayer
-      </div>
+              </div>
               <div style="font-size: x-small">
                 cac41f5c-3f0b-4366-b98a-96b2571419b2
-      </div>
+              </div>
               <div style="font-size: small">2 days ago</div>
             </label>
             <ul class="pushed" style="text-align: center">
               <div style="padding: 10px;">
                 <b>Position</b>: -12, +24, -365
-      </div>
+              </div>
               <button class='btn'>Edit player position</button>
               <button class='btn'>Edit player inventory</button>
             </ul>

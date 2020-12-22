@@ -263,7 +263,7 @@ class CustomControls {
       lastPosition.distanceToSquared(this.object.position) > this.EPS ||
       8 * (1 - lastQuaternion.dot(this.object.quaternion)) > this.EPS) {
 
-      // this.dispatchEvent(changeEvent);
+      this.dispatchEvent(this.changeEvent)
 
       lastPosition.copy(this.object.position)
       lastQuaternion.copy(this.object.quaternion)
@@ -399,8 +399,6 @@ class CustomControls {
     this.rotateEnd.set(event.clientX, event.clientY)
 
     this.rotateDelta.subVectors(this.rotateEnd, this.rotateStart).multiplyScalar(this.rotateSpeed)
-
-    const element = this.element
 
     this.rotateLeft(2 * Math.PI * this.rotateDelta.x / this.element.clientHeight) // yes, height
     this.rotateUp(2 * Math.PI * this.rotateDelta.y / this.element.clientHeight)
@@ -546,14 +544,6 @@ class CustomControls {
 
     }
 
-    if (this.state !== STATE.NONE) {
-      // For simplicity sake, these event handlers are always set
-      // this.element.ownerDocument.addEventListener('pointermove', onPointerMove, false);
-      // this.element.ownerDocument.addEventListener('pointerup', onPointerUp, false);
-
-      // this.dispatchEvent(startEvent);
-    }
-
   }
 
   onMouseMove(event) {
@@ -585,9 +575,9 @@ class CustomControls {
     if (this.enabled === false || this.enableZoom === false || (this.state !== STATE.NONE && this.state !== STATE.ROTATE)) return
     event.preventDefault()
     event.stopPropagation()
-    // this.dispatchEvent(startEvent);
+    this.dispatchEvent(this.startEvent)
     this.handleMouseWheel(event)
-    // this.dispatchEvent(endEvent);
+    this.dispatchEvent(this.endEvent)
   }
 
   //#endregion
@@ -605,7 +595,6 @@ class CustomControls {
       var x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX)
       var y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY)
 
-      console.warn('Rotate',x,y)
       this.rotateStart.set(x, y)
 
     }
@@ -662,8 +651,6 @@ class CustomControls {
     }
 
     this.rotateDelta.subVectors(this.rotateEnd, this.rotateStart).multiplyScalar(this.rotateSpeed)
-
-    var element = this.domElement
 
     this.rotateLeft(2 * Math.PI * this.rotateDelta.x / this.element.clientHeight) // yes, height
 
@@ -761,12 +748,12 @@ class CustomControls {
 
     if (!this.keyDowns.includes(e.code)) {
       this.keyDowns.push(e.code)
-      console.debug('[control] Key down: ', this.keyDowns)
+      // console.debug('[control] Key down: ', this.keyDowns)
     }
   }
 
   onKeyUp = (event) => {
-    console.log('[control] Key up: ', event.code, this.keyDowns)
+    // console.log('[control] Key up: ', event.code, this.keyDowns)
     this.keyDowns = this.keyDowns.filter(code => code != event.code)
   }
 

@@ -185,15 +185,15 @@ const SideBarExpanded = (props) => {
   const { handler, editorState }: IEditorComponent = props
   let child
   switch (editorState.sidebarMode) {
-  case SidebarModes.World:
-    child = <WorldBar {...props} />
-    break
-  case SidebarModes.Players:
-    child = <PlayerBar {...props} />
-    break
-  default:
-    child = <TeapotBar {...props} />
-    break
+    case SidebarModes.World:
+      child = <WorldBar {...props} />
+      break
+    case SidebarModes.Players:
+      child = <PlayerBar {...props} />
+      break
+    default:
+      child = <TeapotBar {...props} />
+      break
   }
 
   return (

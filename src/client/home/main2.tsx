@@ -98,19 +98,19 @@ export class HomeScreen extends Component {
 
     let content = null
     switch (currentScreen) {
-    case HP.Home:
-      content = <MainMenu handler={this.stateControl} />
-      break
-    case HP.Controls:
-      content = <MainKeys handler={this.stateControl} />
-      break
-    case HP.Load:
-    case HP.Create:
-      ipcRenderer.send('OpenViewer')
-      break
-    default:
-      content = <MainAbout handler={this.stateControl} />
-      break
+      case HP.Home:
+        content = <MainMenu handler={this.stateControl} />
+        break
+      case HP.Controls:
+        content = <MainKeys handler={this.stateControl} />
+        break
+      case HP.Load:
+      case HP.Create:
+        ipcRenderer.send('OpenViewer')
+        break
+      default:
+        content = <MainAbout handler={this.stateControl} />
+        break
     }
 
     return (

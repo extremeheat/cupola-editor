@@ -1,7 +1,9 @@
 /* global THREE */
 // Similar to THREE MapControls with more Minecraft-like
 // controls.
-// Shift = Move Down, Space = Move Up, WSAD to move NSWE
+// Defaults:
+// Shift = Move Down, Space = Move Up
+// W/Z - north, S - south, A/Q - west, D - east
 // + Add a translateY() to translate camera and adjust target
 // + Controls are ticked on update instead of on key down so
 //   multiple keys may be down at same time
@@ -18,19 +20,22 @@ const STATE = {
 }
 
 class CustomControls {
-  constructor(object, domElement) {
+  constructor(camera, domElement) {
     this.rotOrigin = null
     this.enabled = true
-    this.object = object
+    this.object = camera
     this.element = domElement
 
     // Mouse buttons
     this.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }
 
+    // Touch fingers
+    this.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }
+
     this.controlMap = {
-      MOVE_FORWARD: 'KeyW',
+      MOVE_FORWARD: ['KeyW', 'KeyZ'],
       MOVE_BACKWARD: 'KeyS',
-      MOVE_LEFT: 'KeyA',
+      MOVE_LEFT: ['KeyA', 'KeyQ'],
       MOVE_RIGHT: 'KeyD',
       MOVE_DOWN: 'ShiftLeft',
       MOVE_UP: 'Space'
@@ -64,14 +69,17 @@ class CustomControls {
     // This option actually enables dollying in and out; left as "zoom" for backwards compatibility.
     // Set to false to disable zooming
     this.enableZoom = true
+    this.enableTouchZoom = true
     this.zoomSpeed = 1.0
 
     // Set to false to disable rotating
     this.enableRotate = true
+    this.enableTouchRotate = true
     this.rotateSpeed = 1.0
 
     // Set to false to disable panning
     this.enablePan = true
+    this.enableTouchPan = true
     this.panSpeed = 1.0
     this.screenSpacePanning = false // if false, pan orthogonal to world-space direction camera.up
     this.keyPanSpeed = 20	// pixels moved per arrow key push
@@ -114,23 +122,18 @@ class CustomControls {
 
     this.ticks = 0
 
-    // 
+    // register event handlers
     this.registerHandlers()
   }
 
-  setRotationOrigin() {
-
+  //#region Public Methods
+  setRotationOrigin(position) {
+    this.target = position.clone()
   }
 
   unsetRotationOrigin() {
-
+    this.target = new THREE.Vector3()
   }
-
-  // 
-
-  //
-  // public methods
-  //
 
   getPolarAngle() {
     return this.spherical.phi
@@ -272,8 +275,9 @@ class CustomControls {
     return false
   }
 
-  // -- ORBIT CONTROLS --
+  //#endregion
 
+  //#region Orbit Controls 
   getAutoRotationAngle() {
     return 2 * Math.PI / 60 / 60 * this.autoRotateSpeed
   }
@@ -317,15 +321,13 @@ class CustomControls {
   // Patch - translate Y and update target
   // https://stackoverflow.com/q/38311651/11173996
   translateY(delta) {
-    this.camera.position.y += delta
+    this.object.position.y += delta
     this.target.add(new THREE.Vector3(0, delta, 0))
   }
 
   // deltaX and deltaY are in pixels; right and down are positive
   pan(deltaX, deltaY) {
     let offset = new THREE.Vector3()
-
-    const element = this.element
 
     if (this.object.isPerspectiveCamera) {
       // perspective
@@ -337,12 +339,12 @@ class CustomControls {
       targetDistance *= Math.tan((this.object.fov / 2) * Math.PI / 180.0)
 
       // we use only clientHeight here so aspect ratio does not distort speed
-      this.panLeft(2 * deltaX * targetDistance / element.clientHeight, this.object.matrix)
-      this.panUp(2 * deltaY * targetDistance / element.clientHeight, this.object.matrix)
+      this.panLeft(2 * deltaX * targetDistance / this.element.clientHeight, this.object.matrix)
+      this.panUp(2 * deltaY * targetDistance / this.element.clientHeight, this.object.matrix)
     } else if (this.object.isOrthographicCamera) {
       // orthographic
-      this.panLeft(deltaX * (this.object.right - this.object.left) / this.object.zoom / element.clientWidth, this.object.matrix)
-      this.panUp(deltaY * (this.object.top - this.object.bottom) / this.object.zoom / element.clientHeight, this.object.matrix)
+      this.panLeft(deltaX * (this.object.right - this.object.left) / this.object.zoom / this.element.clientWidth, this.object.matrix)
+      this.panUp(deltaY * (this.object.top - this.object.bottom) / this.object.zoom / this.element.clientHeight, this.object.matrix)
     } else {
       // camera neither orthographic nor perspective
       console.warn('WARNING: OrbitControls.js encountered an unknown camera type - pan disabled.')
@@ -375,12 +377,9 @@ class CustomControls {
       this.enableZoom = false
     }
   }
+  //#endregion
 
-  // 
-
-  //
-  // event callbacks - update the object state
-  //
+  //#region Event Callbacks - update the object state
 
   handleMouseDownRotate(event) {
     this.rotateStart.set(event.clientX, event.clientY)
@@ -403,8 +402,8 @@ class CustomControls {
 
     const element = this.element
 
-    this.rotateLeft(2 * Math.PI * this.rotateDelta.x / element.clientHeight) // yes, height
-    this.rotateUp(2 * Math.PI * this.rotateDelta.y / element.clientHeight)
+    this.rotateLeft(2 * Math.PI * this.rotateDelta.x / this.element.clientHeight) // yes, height
+    this.rotateUp(2 * Math.PI * this.rotateDelta.y / this.element.clientHeight)
 
     this.rotateStart.copy(this.rotateEnd)
 
@@ -434,7 +433,7 @@ class CustomControls {
     this.update(true)
   }
 
-  handleMouseUp( /*event*/) {
+  handleMouseUp(/*event*/) {
     // no-op
   }
 
@@ -448,7 +447,9 @@ class CustomControls {
     this.update(true)
   }
 
-  // -- HANDLERS --
+  //#endregion
+
+  //#region Mouse/Keyboard handlers
 
   // Called when the cursor location has moved
   onPointerMove = (event) => {
@@ -589,66 +590,341 @@ class CustomControls {
     // this.dispatchEvent(endEvent);
   }
 
+  //#endregion
+
+
+  //#region Touch handlers
+  handleTouchStartRotate(event) {
+
+    if (event.touches.length == 1) {
+
+      this.rotateStart.set(event.touches[0].pageX, event.touches[0].pageY)
+
+    } else {
+
+      var x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX)
+      var y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY)
+
+      console.warn('Rotate',x,y)
+      this.rotateStart.set(x, y)
+
+    }
+
+  }
+
+  handleTouchStartPan(event) {
+
+    if (event.touches.length == 1) {
+
+      this.panStart.set(event.touches[0].pageX, event.touches[0].pageY)
+
+    } else {
+
+      var x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX)
+      var y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY)
+
+      this.panStart.set(x, y)
+
+    }
+
+  }
+
+  handleTouchStartDolly(event) {
+
+    var dx = event.touches[0].pageX - event.touches[1].pageX
+    var dy = event.touches[0].pageY - event.touches[1].pageY
+
+    var distance = Math.sqrt(dx * dx + dy * dy)
+
+    this.dollyStart.set(0, distance)
+
+  }
+
+  handleTouchStartDollyPan(event) {
+    if (this.enableTouchZoom) this.handleTouchStartDolly(event)
+    if (this.enableTouchPan) this.handleTouchStartPan(event)
+  }
+
+  handleTouchStartDollyRotate(event) {
+    if (this.enableTouchZoom) this.handleTouchStartDolly(event)
+    if (this.enableTouchRotate) this.handleTouchStartRotate(event)
+
+  }
+
+  handleTouchMoveRotate(event) {
+    if (event.touches.length == 1) {
+      this.rotateEnd.set(event.touches[0].pageX, event.touches[0].pageY)
+    } else {
+      var x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX)
+      var y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY)
+
+      this.rotateEnd.set(x, y)
+    }
+
+    this.rotateDelta.subVectors(this.rotateEnd, this.rotateStart).multiplyScalar(this.rotateSpeed)
+
+    var element = this.domElement
+
+    this.rotateLeft(2 * Math.PI * this.rotateDelta.x / this.element.clientHeight) // yes, height
+
+    this.rotateUp(2 * Math.PI * this.rotateDelta.y / this.element.clientHeight)
+
+    this.rotateStart.copy(this.rotateEnd)
+
+  }
+
+  handleTouchMovePan(event) {
+
+    if (event.touches.length == 1) {
+      this.panEnd.set(event.touches[0].pageX, event.touches[0].pageY)
+
+    } else {
+
+      var x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX)
+      var y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY)
+
+      this.panEnd.set(x, y)
+
+    }
+
+    this.panDelta.subVectors(this.panEnd, this.panStart).multiplyScalar(this.panSpeed)
+
+    this.pan(this.panDelta.x, this.panDelta.y)
+
+    this.panStart.copy(this.panEnd)
+
+  }
+
+  handleTouchMoveDolly(event) {
+
+    var dx = event.touches[0].pageX - event.touches[1].pageX
+    var dy = event.touches[0].pageY - event.touches[1].pageY
+
+    var distance = Math.sqrt(dx * dx + dy * dy)
+
+    this.dollyEnd.set(0, distance)
+
+    this.dollyDelta.set(0, Math.pow(this.dollyEnd.y / this.dollyStart.y, this.zoomSpeed))
+
+    this.dollyOut(this.dollyDelta.y)
+
+    this.dollyStart.copy(this.dollyEnd)
+
+  }
+
+  handleTouchMoveDollyPan(event) {
+
+    if (this.enableTouchZoom) this.handleTouchMoveDolly(event)
+
+    if (this.enableTouchPan) this.handleTouchMovePan(event)
+
+  }
+
+  handleTouchMoveDollyRotate(event) {
+
+    if (this.enableTouchZoom) this.handleTouchMoveDolly(event)
+
+    if (this.enableTouchRotate) this.handleTouchMoveRotate(event)
+
+  }
+
+  handleTouchEnd( /*event*/) {
+
+    // no-op
+
+  }
+
+  //#endregion
+
   tickContols = () => {
-    let needsUpdate = false
     const control = this.controlMap
 
     for (var keyCode of this.keyDowns) {
-      switch (keyCode) {
-        case control.MOVE_FORWARD:
-          this.pan(0, this.keyPanSpeed)
-          needsUpdate = true
-          break
-
-        case control.MOVE_BACKWARD:
-          this.pan(0, - this.keyPanSpeed)
-          needsUpdate = true
-          break
-
-        case control.MOVE_LEFT:
-          this.pan(this.keyPanSpeed, 0)
-          needsUpdate = true
-          break
-
-        case control.MOVE_RIGHT:
-          this.pan(-this.keyPanSpeed, 0)
-          needsUpdate = true
-          break
-
-        case control.MOVE_UP:
-          this.translateY(+1)
-          needsUpdate = true
-          break
-
-        case control.MOVE_DOWN:
-          this.translateY(-1)
-          needsUpdate = true
-          break
+      if (control.MOVE_FORWARD.includes(keyCode)) {
+        this.pan(0, this.keyPanSpeed)
+      } else if (control.MOVE_BACKWARD.includes(keyCode)) {
+        this.pan(0, -this.keyPanSpeed)
+      } else if (control.MOVE_LEFT.includes(keyCode)) {
+        this.pan(this.keyPanSpeed, 0)
+      } else if (control.MOVE_RIGHT.includes(keyCode)) {
+        this.pan(-this.keyPanSpeed, 0)
+      } else if (control.MOVE_UP.includes(keyCode)) {
+        this.translateY(+1)
+      } else if (control.MOVE_DOWN.includes(keyCode)) {
+        this.translateY(-1)
       }
-    }
-
-    if (needsUpdate) {
-      // We don't (shouldn't?) need to update here since we already run on update
-      // this.update(true)
     }
   }
 
   onKeyDown = (e) => {
     if (!this.enabled) return
 
-    // console.log('K', e)
-
     if (!this.keyDowns.includes(e.code)) {
       this.keyDowns.push(e.code)
-      console.debug('[control] Downed: ', this.keyDowns)
+      console.debug('[control] Key down: ', this.keyDowns)
     }
   }
 
   onKeyUp = (event) => {
-    console.log('KU', event.code, this.keyDowns)
+    console.log('[control] Key up: ', event.code, this.keyDowns)
     this.keyDowns = this.keyDowns.filter(code => code != event.code)
-    console.log('KU End', event.code, this.keyDowns)
   }
+
+  onTouchStart = (event) => {
+
+    if (this.enabled === false) return
+
+    event.preventDefault() // prevent scrolling
+
+    switch (event.touches.length) {
+
+      case 1:
+
+        switch (this.touches.ONE) {
+
+          case THREE.TOUCH.ROTATE:
+
+            if (this.enableTouchRotate === false) return
+
+            this.handleTouchStartRotate(event)
+
+            this.state = STATE.TOUCH_ROTATE
+
+            break
+
+          case THREE.TOUCH.PAN:
+
+            if (this.enableTouchPan === false) return
+
+            this.handleTouchStartPan(event)
+
+            this.state = STATE.TOUCH_PAN
+
+            break
+
+          default:
+
+            this.state = STATE.NONE
+
+        }
+
+        break
+
+      case 2:
+
+        switch (this.touches.TWO) {
+
+          case THREE.TOUCH.DOLLY_PAN:
+
+            if (this.enableTouchZoom === false && this.enableTouchPan === false) return
+
+            this.handleTouchStartDollyPan(event)
+
+            this.state = STATE.TOUCH_DOLLY_PAN
+
+            break
+
+          case THREE.TOUCH.DOLLY_ROTATE:
+
+            if (this.enableTouchZoom === false && this.enableTouchRotate === false) return
+
+            this.handleTouchStartDollyRotate(event)
+
+            this.state = STATE.TOUCH_DOLLY_ROTATE
+
+            break
+
+          default:
+
+            this.state = STATE.NONE
+
+        }
+
+        break
+
+      default:
+
+        this.state = STATE.NONE
+
+    }
+
+    if (this.state !== STATE.NONE) {
+
+      this.dispatchEvent(this.startEvent)
+
+    }
+
+  }
+
+  onTouchMove = (event) => {
+
+    if (this.enabled === false) return
+
+    event.preventDefault() // prevent scrolling
+    event.stopPropagation()
+
+    switch (this.state) {
+
+      case STATE.TOUCH_ROTATE:
+
+        if (this.enableTouchRotate === false) return
+
+        this.handleTouchMoveRotate(event)
+
+        this.update()
+
+        break
+
+      case STATE.TOUCH_PAN:
+
+        if (this.enableTouchPan === false) return
+
+        this.handleTouchMovePan(event)
+
+        this.update()
+
+        break
+
+      case STATE.TOUCH_DOLLY_PAN:
+
+        if (this.enableTouchZoom === false && this.enableTouchPan === false) return
+
+        this.handleTouchMoveDollyPan(event)
+
+        this.update()
+
+        break
+
+      case STATE.TOUCH_DOLLY_ROTATE:
+
+        if (this.enableTouchZoom === false && this.enableTouchRotate === false) return
+
+        this.handleTouchMoveDollyRotate(event)
+
+        this.update()
+
+        break
+
+      default:
+
+        this.state = STATE.NONE
+
+    }
+
+  }
+
+  onTouchEnd = (event) => {
+
+    if (this.enabled === false) return
+
+    this.handleTouchEnd(event)
+
+    this.dispatchEvent(this.endEvent)
+
+    this.state = STATE.NONE
+
+  }
+
 
   onContextMenu = (event) => {
     // Disable context menu
@@ -660,6 +936,10 @@ class CustomControls {
     this.element.ownerDocument.addEventListener('pointerup', this.onPointerUp, false)
     this.element.ownerDocument.addEventListener('pointerdown', this.onPointerDown, false)
     this.element.addEventListener('wheel', this.onMouseWheel, true)
+
+    this.element.addEventListener('touchstart', this.onTouchStart, false)
+    this.element.addEventListener('touchend', this.onTouchEnd, false)
+    this.element.addEventListener('touchmove', this.onTouchMove, false)
 
     this.element.ownerDocument.addEventListener('contextmenu', this.onContextMenu, false)
     this.element.ownerDocument.addEventListener('keydown', this.onKeyDown, false)
@@ -673,9 +953,9 @@ class CustomControls {
     this.element.removeEventListener('pointerdown', this.onPointerDown, false)
     this.element.removeEventListener('wheel', this.onMouseWheel, false)
 
-    // this.element.removeEventListener( 'touchstart', onTouchStart, false );
-    // this.element.removeEventListener( 'touchend', onTouchEnd, false );
-    // this.element.removeEventListener( 'touchmove', onTouchMove, false );
+    this.element.removeEventListener('touchstart', this.onTouchStart, false)
+    this.element.removeEventListener('touchend', this.onTouchEnd, false)
+    this.element.removeEventListener('touchmove', this.onTouchMove, false)
 
     this.element.ownerDocument.removeEventListener('pointermove', this.onPointerMove, false)
     this.element.ownerDocument.removeEventListener('pointerup', this.onPointerUp, false)
@@ -684,8 +964,9 @@ class CustomControls {
     this.element.removeEventListener('keyup', this.onKeyUp, false)
   }
 
+  dispatchEvent = () => {
+    // no-op
+  }
 }
-// src/app/viewer/custom/CustomControls
-// src/app/viewer/pviewer/...
 
 module.exports = CustomControls

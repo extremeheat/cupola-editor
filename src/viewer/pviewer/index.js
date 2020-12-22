@@ -38,7 +38,7 @@ function createScene() {
   directionalLight.position.set(1, 1, 0.5).normalize()
   scene.add(directionalLight)
 
-  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.2, 1000)
   camera.position.z = 5
 
   const world = new WorldRenderer(scene)

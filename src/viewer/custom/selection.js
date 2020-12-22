@@ -1,7 +1,7 @@
 const { SelectionBox } = require('./overlays')
 const { BlockContainer } = require('../pviewer/blockcontainer')
 
-class Selection {
+class SelectionManager {
 
   constructor(editor, provider) {
     this.editor = editor
@@ -182,6 +182,11 @@ class Selection {
         this.hideSelection(e)
       }
     })
+  }
+
+  handleCursorControlClick() {
+    console.log('[selection] ctrl click', this.editor.lastPos3D)
+    this.addPoint(this.editor.lastPos3D)
   }
 
   // called when the mouse cursor moves, and a raycast
@@ -607,4 +612,4 @@ function cloneVector3a(array) {
   return next
 }
 
-module.exports = { Selection }
+module.exports = { SelectionManager }

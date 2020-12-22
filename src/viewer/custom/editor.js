@@ -1,6 +1,6 @@
 /* global THREE */
 const { createBlockHighlightMesh } = require('./overlays')
-const { Selection } = require('./selection')
+const { SelectionManager } = require('./selection')
 const Viewer3D = require('./viewer')
 
 class Editor3D extends Viewer3D {
@@ -10,15 +10,17 @@ class Editor3D extends Viewer3D {
     // Raycasted coordinate user is looking at
     this.lastFarLookingPos = new THREE.Vector3()
     this.lastNearLookingPos = new THREE.Vector3()
-    
+
     this.highlightMesh = null
     this.selection = null
     this.lastPos3D = null
+
+    this.started = false
   }
 
-  startSelection() {
-    console.log('[edit] started selection')
-    this.selection = new Selection(this, this.provider)
+  createSelectionManager() {
+    console.log('[edit] started selection manager')
+    this.selection = new SelectionManager(this, this.provider)
   }
 
   endSelection() {
@@ -28,7 +30,8 @@ class Editor3D extends Viewer3D {
 
   onStarted() {
     super.onStarted()
-    this.startSelection()
+    this.started = true
+    this.createSelectionManager()
     this.highlightMesh = createBlockHighlightMesh()
     this.highlightMesh2 = createBlockHighlightMesh()
     global.controls.enablePan = false
@@ -67,34 +70,30 @@ class Editor3D extends Viewer3D {
     if (global.debugRaycasts) {
       let near = this.lastNearLookingPos.clone().floor()
       this.blockHighlight2(near.x, near.y, near.z)
-      console.log('-> Looking' , this.lastNearLookingPos, this.lastFarLookingPos)
+      console.log('-> Looking', this.lastNearLookingPos, this.lastFarLookingPos)
       let pos = this.lastFarLookingPos.clone().floor()
-      let [cx,cz] = [pos.x >> 4, pos.z >> 4]
+      let [cx, cz] = [pos.x >> 4, pos.z >> 4]
       console.debug('Looking at', [pos.x, pos.y, pos.z], [cx, cz])
     }
 
-    if (this.selection) {
-      let mesh = this.selection.getSelectionMeshes()
-      if (mesh.length) {
-        children.push(...mesh)
-      }
+    let mesh = this.selection.getSelectionMeshes()
+    if (mesh.length) {
+      children.push(...mesh)
+    }
 
-      // var dist = this.box.position.clone().sub(camera.position).length();
-      // this.raycaster.ray.at(4, this.box.position);
+    // var dist = this.box.position.clone().sub(camera.position).length();
+    // this.raycaster.ray.at(4, this.box.position);
 
-      let handled = this.selection.handleCursorMove(event, this.lastFarLookingPos)
-      if (handled) {
-        event.stopPropagation()
-        return
-      }
+    let handled = this.selection.handleCursorMove(event, this.lastFarLookingPos)
+    if (handled) {
+      event.stopPropagation()
+      return
     }
 
     // calculate objects intersecting the picking ray
     const intersects = this.raycaster.intersectObjects(children)
 
-    // if we are currently in a selection, run logic in
-    // selection.js
-    if (this.selection?.handleRaycast(intersects)) {
+    if (this.selection.handleRaycast(intersects)) {
       event.stopPropagation()
       return
     }
@@ -114,23 +113,22 @@ class Editor3D extends Viewer3D {
       )
       this.lastPos3D = this.highlightMesh.position.clone()
 
-      this.selection?.updateCursor(this.lastPos3D)
+      this.selection.updateCursor(this.lastPos3D)
       break
     }
   }
 
   isChunkInUse(cx, cz) {
-    if (!this.selection) return []
     return this.selection.getOccupiedChunks().includes(cx + ',' + cz)
   }
 
   addColumn(cx, cz, col) {
-    this.selection?.loadSelectionsIn(cx, cz)
+    this.selection.loadSelectionsIn(cx, cz)
     super.addColumn(cx, cz, col)
   }
 
   unloadChunk(cx, cz) {
-    this.selection?.unloadSelectionsIn(cx, cz)
+    this.selection.unloadSelectionsIn(cx, cz)
     super.unloadChunk(cx, cz)
   }
 
@@ -146,22 +144,13 @@ class Editor3D extends Viewer3D {
     this.onControlUpdate(event)
   }
 
-  onCursorControlClick() {
-    console.log('Got ctrl click', this.lastPos3D)
-    if (!this.selection) {
-      this.startSelection()
-    }
-
-    this.selection.addPoint(this.lastPos3D)
-  }
-
   onPointerDown = (e) => {
     // console.log('pointer down', e)
     //TODO: move this logic to selection.js
     if (e.ctrlKey && e.button == 0) {
-      this.onCursorControlClick()
+      this.selection.handleCursorControlClick()
     } else {
-      this.selection?.handlePointerDown(e)
+      this.selection.handlePointerDown(e)
     }
 
     this.hideHighlight()
@@ -169,17 +158,17 @@ class Editor3D extends Viewer3D {
 
   onPointerUp = (e) => {
     // console.log('pointer up', e)
-    this.selection?.handlePointerUp(e)
+    this.selection.handlePointerUp(e)
     this.showHighlight()
   }
 
   onKeyDown = (e) => {
     // console.log('keydown', e)
-    this.selection?.handleKey(e.code)
+    this.selection.handleKey(e.code)
   }
 
   onKeyUp = (e) => {
-    this.selection?.handleKeyUp(e.code)
+    this.selection.handleKeyUp(e.code)
   }
 
   registerHandlers() {

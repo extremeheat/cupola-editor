@@ -176,7 +176,7 @@ class CustomControls {
 
     // so camera.up is the orbit axis
     var quat = new THREE.Quaternion().setFromUnitVectors(this.object.up, new THREE.Vector3(0, 1, 0))
-    var quatInverse = quat.clone().inverse()
+    var quatInverse = quat.clone().invert()
 
     var lastPosition = new THREE.Vector3()
     var lastQuaternion = new THREE.Quaternion()
@@ -746,7 +746,7 @@ class CustomControls {
   onKeyDown = (e) => {
     if (!this.enabled) return
 
-    if (!this.keyDowns.includes(e.code)) {
+    if (e.code && !this.keyDowns.includes(e.code)) {
       this.keyDowns.push(e.code)
       // console.debug('[control] Key down: ', this.keyDowns)
     }
